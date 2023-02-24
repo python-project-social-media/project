@@ -2,14 +2,25 @@ from django.db import models
 from django.contrib.auth.models import User
 # Create your models here.
 
+class Interest(models.Model):
+    name_tr=models.CharField(max_length=50,blank=False,null=False)
+    name_en=models.CharField(max_length=50,blank=False,null=False)
+
+    def __str__(self):
+        return self.name_tr
+
 class Profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
+    interests = models.ManyToManyField(Interest,blank=True)
     bio = models.CharField(max_length=250,blank=False,null=True,default="0")
     profilePhoto = models.ImageField(upload_to="profilePhotos",null=False,blank=False,default="default.png")
     crate = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     def __str__(self):
         return self.user.username
+    
+
+
 
 
 class Post(models.Model):
