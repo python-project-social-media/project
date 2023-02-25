@@ -27,7 +27,7 @@ class PostSerializer(serializers.ModelSerializer):
     profile = serializers.SerializerMethodField('get_profile')
     class Meta:
         model=models.Post
-        fields="__all__"
+        fields=['profile','text']
 
     def get_profile(self,post):
         if post.profile:
