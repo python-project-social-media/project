@@ -9,19 +9,17 @@ class Interest(models.Model):
     def __str__(self):
         return self.name_tr
 
+
 class Profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     interests = models.ManyToManyField(Interest,blank=True)
-    bio = models.CharField(max_length=250,blank=False,null=True,default="0")
-    profilePhoto = models.ImageField(upload_to="profilePhotos",null=False,blank=False,default="default.png")
+    bio = models.CharField(max_length=250,null=False,blank=True,default="0")
+    profilePhoto = models.ImageField(upload_to="profilePhotos",null=False,blank=True,default="default.png")
     crate = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     def __str__(self):
         return self.user.username
     
-
-
-
 
 class Post(models.Model):
     profile  = models.ForeignKey(Profile,on_delete=models.CASCADE,blank=False,null=False)

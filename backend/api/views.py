@@ -5,6 +5,8 @@ from rest_framework.decorators import api_view,permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated,IsAdminUser,AllowAny
 from . import models,forms,serializers
+from django.contrib.auth.forms import UserCreationForm
+
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -38,6 +40,27 @@ def Routes(request):
 
     return Response(routes)
 
+@api_view(['POST']) 
+def Register(request):
+    form = UserCreationForm()
+    if request.data:
+        form = UserCreationForm(request.data)
+        if form.is_valid():
+            user = form.save()
+            data = {"user":user}
+            formprofile = forms.ProfileForm(data)
+            if formprofile.is_valid():
+                formprofile.save()
+                return Response({"msg_en":"Successfully registered. ✨","msg_tr":"Başarıyla kayıt olundu. ✨"},status=200)
+            else:
+                user.delete()
+                return Response({"msg_en":"An error occured. 🤔","msg_tr":"Bir hata oluştu. 🤔"},status=400)
+        else:
+            
+            return Response({"msg_en":"Data is not valid. 🤨","msg_tr":"Veri doğru değil. 🤨"},status=400)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+
 #? POST CRUD
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
@@ -51,6 +74,8 @@ def AddPost(request):
             return Response(serializer.data,status=200)
         else:
             return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -84,3 +109,20 @@ def UpdatePost(request,id):
             return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=400)
     else:
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
+
+@api_view(['PUT'])    
+@permission_classes([IsAuthenticated])
+def UpdateProfile(request):
+    profile = get_object_or_404(models.Profile, id=request.user.id)
+    if request.data:
+        if request.data.get('bio'):
+            profile.bio = request.data.get('bio')
+        if request.data.get('bio'):
+            profile.bio = request.data.get('bio')
+        if 'profilePhoto' in request.FILES:
+            profile.profilePhoto = request.FILES['profilePhoto']
+        profile.save()
+        data = serializers.ProfileSerializer(profile,many=False)
+        return Response({"msg_en":"Successfully updated profile. 🚀","msg_tr":"Profil başarıyla güncellendi. 🚀","data":data.data},status=200)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
