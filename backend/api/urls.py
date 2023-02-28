@@ -15,4 +15,5 @@ urlpatterns = [
     path('post/<int:id>/delete', views.DeletePost),
     path('post/<int:id>/update', views.UpdatePost),
     path('profile/update', views.UpdateProfile),
+    path('accounts/', include('allauth.urls')),
 ]

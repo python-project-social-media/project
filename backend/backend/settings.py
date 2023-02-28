@@ -15,10 +15,13 @@ SECRET_KEY = 'django-insecure-3ob_osy(_t%**hv&p#pkgq)jdcg+avmj*6f5r!fkf--#)5+l3k
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
+SITE_ID = 1
 
 # Application definition
+
+
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -31,6 +34,11 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt.token_blacklist',
     'corsheaders',
+    'allauth',
+    'allauth.account',
+    'allauth.socialaccount',
+    'django.contrib.sites',
+    'allauth.socialaccount.providers.google',
 ]
 
 MIDDLEWARE = [
@@ -42,6 +50,20 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
+
+SOCIALACCOUNT_PROVIDERS = {
+    'google': {
+        'SCOPE': [
+            'profile',
+            'email',
+        ],
+        'AUTH_PARAMS': {
+            'access_type': 'online',
+        },
+        'OAUTH_PKCE_ENABLED': True,
+    }
+}
 
 REST_FRAMEWORK = {
     'DATETIME_FORMAT': '%d %B %Y %H:%M',
@@ -93,9 +115,15 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'django.template.context_processors.request',
             ],
         },
     },
+]
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend',
+    'allauth.account.auth_backends.AuthenticationBackend',
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
@@ -130,7 +158,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+#!ALLAUTH
+ACCOUNT_AUTHENTICATED_LOGIN_REDIRECTS = True
 
+LOGIN_REDIRECT_URL = "/"
 
 LANGUAGE_CODE = 'tr-TR'
 
