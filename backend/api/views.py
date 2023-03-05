@@ -6,8 +6,10 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated,IsAdminUser,AllowAny
 from . import models,forms,serializers
 from django.contrib.auth.forms import UserCreationForm
-
-
+from allauth.socialaccount.providers.google.views import GoogleOAuth2Adapter
+from rest_auth.registration.views import SocialLoginView
+from allauth.socialaccount.providers.oauth2.client import OAuth2Client
+import jwt
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
@@ -61,7 +63,22 @@ def Register(request):
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
+@api_view(['POST']) 
+def AddProfile(request):
+    if request.data:
+        form = forms.ProfileForm(request.data)
+        if form.is_valid():
+            profile = form.save()
+            serializer = serializers.ProfileSerializer(profile,many=False)
+            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
+        else:
+            return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+    
+
 #? POST CRUD
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def AddPost(request):
@@ -126,3 +143,9 @@ def UpdateProfile(request):
         return Response({"msg_en":"Successfully updated profile. 🚀","msg_tr":"Profil başarıyla güncellendi. 🚀","data":data.data},status=200)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+    
+
+class GoogleLogin(SocialLoginView):
+    adapter_class = GoogleOAuth2Adapter
+    callback_url = "http://localhost:5173/login"
+    client_class = OAuth2Client

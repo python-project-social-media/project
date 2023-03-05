@@ -103,6 +103,10 @@ dist
 # TernJS port file
 .tern-port
 
+social-auth/node_modules
+
 backend/db.sqlite3
+
 backend/media
+
 db.sqlite3

@@ -14,7 +14,8 @@ class Profile(models.Model):
     user = models.ForeignKey(User,on_delete=models.CASCADE)
     interests = models.ManyToManyField(Interest,blank=True)
     bio = models.CharField(max_length=250,null=False,blank=True,default="0")
-    profilePhoto = models.ImageField(upload_to="profilePhotos",null=False,blank=True,default="default.png")
+    profilePhoto = models.ImageField(upload_to="profilePhotos",null=True,blank=True)
+    profilePhotoUrl = models.CharField(max_length=350,null=False,blank=True,default="")
     crate = models.DateTimeField(auto_now=True,blank=True, null=True)
 
     def __str__(self):
