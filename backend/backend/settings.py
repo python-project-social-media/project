@@ -46,8 +46,6 @@ SIMPLE_JWT = {
     'BLACKLIST_AFTER_ROTATION': True,
 }
 
-
-
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
         "APP": {
@@ -144,7 +142,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LOGIN_REDIRECT_URL = "/"
 
-LANGUAGE_CODE = 'tr-TR'
+LANGUAGE_CODE = 'en-EN'
 
 TIME_ZONE = 'Europe/Istanbul'
 

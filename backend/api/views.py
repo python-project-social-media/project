@@ -16,6 +16,10 @@ import logging
 from neo4j.exceptions import ServiceUnavailable
 from dotenv import load_dotenv
 import os 
+import time
+import datetime
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.decorators import authentication_classes
 
 load_dotenv()
 
@@ -28,48 +32,88 @@ class App:
         # Don't forget to close the driver connection when you are finished with it
         self.driver.close()
 
-    def add_post(self,tx, text, profile_id):
-        # To learn more about the Cypher syntax, see https://neo4j.com/docs/cypher-manual/current/
-        # The Reference Card is also a good resource for keywords https://neo4j.com/docs/cypher-refcard/current/
+    def serialize_post(self,result):
+        post_data = result[0].get('post')
+        profile = get_object_or_404(models.Profile,id=post_data['profile_id'])
+        post_data['profile'] = serializers.ProfileSerializer(profile,many=False).data
+        post_data['edit'] = datetime.datetime.fromtimestamp( post_data.get('edit')/1000 )  
+        post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
+        return post_data
+
+    def add_post_helper(self, tx, text, profile_id):
         query = (
             "CREATE (post:Post { text: $text,profile_id:$profile_id,create:TIMESTAMP(),edit:TIMESTAMP()}) "
-            "RETURN post"
+            "RETURN post, ID(post)"
         )
         result = tx.run(query, text=text, profile_id=profile_id)
-    
+        
         try:
-            print(result)
-            return [{"data": row["p1"]["name"], "p2": row["p2"]["name"]}
-                    for row in result]
-        # Capture any errors along with the query and data for traceability
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def add_post(self, text, profile_id):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.add_post_helper, text, profile_id)
+            output = self.serialize_post(result)
+            return output
+
+
+    def delete_post_helper(self, tx, id):
+        query = (
+            "MATCH (post:Post) "
+            "WHERE ID(post)=$id "
+            "DETACH DELETE post"
+        )
+        result = tx.run(query, id=id)
+        
+        try:
+            return ([row.data()
+                for row in result])
         except ServiceUnavailable as exception:
             logging.error("{query} raised an error: \n {exception}".format(
-                query=query, exception=exception))
+            query=query, exception=exception))
+            raise
+
+    def delete_post(self, id):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.delete_post_helper, id)
+            return result
+
+
+    def get_post_helper(self, tx, id):
+        query = (
+            "MATCH (post:Post) "
+            "WHERE ID(post)=$id "
+            "RETURN post"
+        )
+        result = tx.run(query,id=id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
             raise
 
     def get_post(self, id):
         with self.driver.session(database="neo4j") as session:
-            result = session.execute_read(self.get_post, id)
-            for row in result:
-                print("Found person: {row}".format(row=row))
+            result = session.execute_write(
+                self.get_post_helper,id=id)
+            if result==[]:
+                return "E"
+            output = self.serialize_post(result)
+            return output
 
-    def delete_post(self,tx,id):
-        query = (
-            "MATCH (post:Post)"
-            "WHERE post.id = $id"
-            "DETACH DELETE post"
-        )
-        result = tx.run(query, id=id)
     
-        try:
-            print(result)
-            return ["mesi"]
-        # Capture any errors along with the query and data for traceability
-        except ServiceUnavailable as exception:
-            logging.error("{query} raised an error: \n {exception}".format(
-                query=query, exception=exception))
-            raise
-
     def filter_post_by_text(tx,text):
         query = (
             "MATCH (post:Post) "
@@ -80,25 +124,31 @@ class App:
         print(result)
         return [row["name"] for row in result]
 
-    def update_post(self,tx,id,text=None):
-        if text!=None:
-            query = (
-            "MATCH (post:Post)"
-            "WHERE post.id=$id"
-            "SET post.text = $text"
-            "SET post.update = TIMESTAMP()"
+    def update_post_helper(self,tx,id,text):
+        query = (
+            "MATCH (post:Post) "
+            "WHERE ID(post)=$id "
+            "SET post.text = $text "
+            "SET post.update = TIMESTAMP() "
             "RETURN post"
-            )
-            result = tx.run(query, id=id)
-    
-            try:
-                print(result)
-                return ["mesi"]
-            # Capture any errors along with the query and data for traceability
-            except ServiceUnavailable as exception:
-                logging.error("{query} raised an error: \n {exception}".format(
-                    query=query, exception=exception))
-                raise
+        )
+        result = tx.run(query,id=id,text=text)
+        try:
+            print(result,"typo")
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def update_post(self,id,text):
+        if text!=None:
+            with self.driver.session(database="neo4j") as session:
+                result = session.execute_write(
+                self.update_post_helper,id=id,text=text)
+                output = self.serialize_post(result)
+                return output
         else:
             print("no data given")
 
@@ -135,9 +185,6 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         token['is_authenticated'] = user.is_authenticated
         token['is_superuser'] = user.is_superuser
 
-
-        # ...
-
         return token
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -153,8 +200,7 @@ def Routes(request):
         '/post/:id/update',
         '/post/:id/delete',
     ]
-    app.create_friendship("SUAREZ","NEYMAR")
-    app.close()
+    
     return Response(routes)
 
 @api_view(['POST']) 
@@ -195,34 +241,34 @@ def AddProfile(request):
 #? POST CRUD
 
 @api_view(['POST'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def AddPost(request):
-    form = forms.PostForm()
     if request.data:
-        form = forms.PostForm(request.data)
-        if form.is_valid():
-            post = form.save()
-            serializer=serializers.PostSerializer(post,many=False)
-            return Response(serializer.data,status=200)
-        else:
-            return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
+        profile = get_object_or_404(models.Profile,user=request.user)
+        post_data = (app.add_post(text=request.data.get('text'),profile_id=profile.id))
+        app.close()
+        return Response({"data":post_data},status=200)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def GetPost(request,id):
-    post = get_object_or_404(models.Post,id=id)
-    data = serializers.PostSerializer(post,many=False)
-    
-    return Response({"msg_tr":"Got the post successfully. ✨","msg_en":"Gönderi başarıyla alındı. ✨","data":data.data},status=200)
+    result = app.get_post(id=id)
+    if result=="E":
+        return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
+    return Response({"msg_en":"Got the post successfully. ✨","msg_tr":"Gönderi başarıyla alındı. ✨","data":result},status=200)
 
 @api_view(['DELETE'])
 @permission_classes([IsAuthenticated])
 def DeletePost(request,id):
-    post = models.Post.objects.get(id=id)
-    if request.user.id==post.profile.user.id:
-        post.delete()
+    post = app.get_post(id=id)
+    if result=="E":
+        return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
+    if request.user.id==post.get('profile').get('user').get('id'):
+        result = app.delete_post(id=id)
+        app.close()
         return Response({"msg_en":"Successfully deleted the post. 👽","msg_tr":"Gönderi başarıyla silindi. 👽"},status=200)
     else:
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
@@ -230,14 +276,13 @@ def DeletePost(request,id):
 @api_view(['PUT'])
 @permission_classes([IsAuthenticated])
 def UpdatePost(request,id):
-    post = get_object_or_404(models.Post,id=id)
-    if request.user.id==post.profile.user.id:
+    post = app.get_post(id=id)
+    if post=="E":
+        return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
+    if request.user.id==post.get('profile').get('user').get('id'):
         if request.data:
-            if request.data.get('text'):
-                post.text = request.data.get('text')
-                post.save()
-            post=serializers.PostSerializer(post,many=False)
-            return Response({"msg_en":"Successfully updated the post. 🚀","msg_tr":"Gönderi başarıyla güncellendi. 🚀","data":post.data},status=200)
+            post_data = app.update_post(id=id,text=request.data.get('text'))
+            return Response({"msg_en":"Successfully updated the post. 🚀","msg_tr":"Gönderi başarıyla güncellendi. 🚀","data":post_data},status=200)
         else:
             return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=400)
     else:

@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
 import jwt_decode from "jwt-decode";
 import { useContext } from "react";
-import AuthContext from "@/context/context";
+import AuthContext from "../../context/context";
 function Login() {
   let { responseGoogle }: any = useContext(AuthContext);
 
