@@ -6,14 +6,37 @@ export default AuthContext;
 
 export const AuthProvider = ({ children }: any) => {
   const [profile, setProfile] = useState();
+  const [key, setKey] = useState();
 
   useEffect(() => {
-    if (localStorage.getItem("profile")) {
-      setProfile(jwt_decode(localStorage.getItem("profile")!));
-    } else {
-      setProfile(undefined);
+    if (localStorage.getItem("key")) {
+      getUserByKey(localStorage.getItem("key")!);
     }
-  }, []);
+  }, [key]);
+
+  const getProfile = async (id: number) => {
+    let response = await fetch(`http://localhost:8000/api/profile/${id}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      setProfile(data["data"]);
+    });
+  };
+
+  const getUserByKey = async (key: string) => {
+    let response = await fetch("http://127.0.0.1:8000/api/auth/user/", {
+      method: "GET",
+      headers: {
+        Authorization: "Token " + key,
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      getProfile(data["pk"]);
+    });
+  };
 
   const addProfile = async (data: any) => {
     let response = await fetch("http://localhost:8000/api/profile/add", {
@@ -24,6 +47,9 @@ export const AuthProvider = ({ children }: any) => {
       body: JSON.stringify(data),
     }).then(async (resp: Response) => {
       let data = await resp.json();
+      if (data["msg_en"] == "Profile already exists. 😥") {
+        return;
+      }
       setProfile(jwt_decode(data));
       localStorage.setItem("profile", data);
     });
@@ -44,13 +70,23 @@ export const AuthProvider = ({ children }: any) => {
     ).then(async (resp: Response) => {
       if (resp.status == 200) {
         let data: any = await resp.json();
-        let user_data: any = jwt_decode(tokens.credential);
-        let addProfileData = {
-          user: data.user.pk,
-          profilePhotoUrl: user_data.picture,
-        };
-        addProfile(addProfileData);
+        setKey(data["key"]);
+        localStorage.setItem("key", data["key"]);
       }
+    });
+  };
+
+  const logout = async () => {
+    let resp = await fetch("http://127.0.0.1:8000/api/auth/logout/", {
+      method: "POST",
+      headers: {
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(() => {
+      setKey(undefined);
+      setProfile(undefined);
+      localStorage.removeItem("key");
+      localStorage.removeItem("profile");
     });
   };
 
@@ -58,6 +94,7 @@ export const AuthProvider = ({ children }: any) => {
     profile: profile,
     responseGoogle: responseGoogle,
     addProfile: addProfile,
+    logout: logout,
   };
   return (
     <AuthContext.Provider value={contextData}>{children}</AuthContext.Provider>

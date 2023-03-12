@@ -25,6 +25,8 @@ load_dotenv()
 
 class App:
 
+    # match (profile:Profile) create (post:Post {text:"lets f'in go",profile_id:profile.id}) create (profile) -[:Posted]-> (post) return profile
+
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
@@ -40,10 +42,10 @@ class App:
         post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
         return post_data
 
+    #!Add post
     def add_post_helper(self, tx, text, profile_id):
         query = (
-            "CREATE (post:Post { text: $text,profile_id:$profile_id,create:TIMESTAMP(),edit:TIMESTAMP()}) "
-            "RETURN post, ID(post)"
+            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
         )
         result = tx.run(query, text=text, profile_id=profile_id)
         
@@ -63,7 +65,7 @@ class App:
             output = self.serialize_post(result)
             return output
 
-
+    #!Delete post
     def delete_post_helper(self, tx, id):
         query = (
             "MATCH (post:Post) "
@@ -87,7 +89,7 @@ class App:
                 self.delete_post_helper, id)
             return result
 
-
+    #!Get post
     def get_post_helper(self, tx, id):
         query = (
             "MATCH (post:Post) "
@@ -113,17 +115,7 @@ class App:
             output = self.serialize_post(result)
             return output
 
-    
-    def filter_post_by_text(tx,text):
-        query = (
-            "MATCH (post:Post) "
-            "WHERE post.text CONTAINS WITH '$text'"
-            "RETURN p.name AS name"
-        )
-        result = tx.run(query, text=text)
-        print(result)
-        return [row["name"] for row in result]
-
+    #!Update post
     def update_post_helper(self,tx,id,text):
         query = (
             "MATCH (post:Post) "
@@ -152,6 +144,17 @@ class App:
         else:
             print("no data given")
 
+
+    def filter_post_by_text(tx,text):
+        query = (
+            "MATCH (post:Post) "
+            "WHERE post.text CONTAINS WITH '$text'"
+            "RETURN p.name AS name"
+        )
+        result = tx.run(query, text=text)
+        print(result)
+        return [row["name"] for row in result]
+    
     def add_profile(self,tx,user_id,username):
         query = (
             "CREATE (post:Profile { user: $user_id,username:$username,create:TIMESTAMP(),edit:TIMESTAMP()}) "
@@ -193,8 +196,18 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['GET'])
 def Routes(request):
     routes = [
-        '/register/',
+        '/rest-auth/google/',
+        '/auth/login',
+        '/auth/logout',
+        '/auth/user',
+        '/auth/password/change',
+        '/auth/password/reset',
+        '/auth/password/reset/confirm',
+        '/register',
         '/login/',
+        '/profile/:id',
+        '/profile/add',
+        '/profile/update',
         '/post/add',
         '/post/:id',
         '/post/:id/update',
@@ -227,6 +240,11 @@ def Register(request):
 @api_view(['POST']) 
 def AddProfile(request):
     if request.data:
+        user = models.User.objects.get(id = request.data.get('user'))
+        profile = models.Profile.objects.filter(user=user)
+        if len(profile)>0:
+            serializer = serializers.ProfileSerializer(profile[0],many=False)
+            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
         form = forms.ProfileForm(request.data)
         if form.is_valid():
             profile = form.save()
@@ -236,10 +254,8 @@ def AddProfile(request):
             return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
-    
 
-#? POST CRUD
-
+#! POST CRUD
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -261,6 +277,7 @@ def GetPost(request,id):
     return Response({"msg_en":"Got the post successfully. ✨","msg_tr":"Gönderi başarıyla alındı. ✨","data":result},status=200)
 
 @api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def DeletePost(request,id):
     post = app.get_post(id=id)
@@ -274,6 +291,7 @@ def DeletePost(request,id):
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
 
 @api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdatePost(request,id):
     post = app.get_post(id=id)
@@ -288,6 +306,7 @@ def UpdatePost(request,id):
     else:
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
 
+#! PROFILE CRUD
 @api_view(['PUT'])    
 @permission_classes([IsAuthenticated])
 def UpdateProfile(request):
@@ -302,7 +321,16 @@ def UpdateProfile(request):
         return Response({"msg_en":"Successfully updated profile. 🚀","msg_tr":"Profil başarıyla güncellendi. 🚀","data":data.data},status=200)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
-    
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def GetProfile(request,id):
+    profile = models.Profile.objects.filter(user=models.User.objects.get(id=id))
+    if len(profile)>0:
+        data = serializers.ProfileSerializer(profile[0],many=False)
+        return Response({"data":data.data},status=200)
+    else:
+        return Response({"msg_en":"Couldnt find profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter

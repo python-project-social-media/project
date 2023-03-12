@@ -2,7 +2,9 @@ from datetime import timedelta
 from pathlib import Path
 import os
 from neomodel import config
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+from . import settings
+import datetime
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -11,12 +13,6 @@ SECRET_KEY = 'django-insecure-3ob_osy(_t%**hv&p#pkgq)jdcg+avmj*6f5r!fkf--#)5+l3k
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
-from neo4j import GraphDatabase
-import logging
-from neo4j.exceptions import ServiceUnavailable
-
-
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -39,12 +35,6 @@ INSTALLED_APPS = [
     'allauth.socialaccount.providers.google',
 ]
 
-SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
-    'ROTATE_REFRESH_TOKENS': True,
-    'BLACKLIST_AFTER_ROTATION': True,
-}
 
 SOCIALACCOUNT_PROVIDERS = {
     "google": {
@@ -60,7 +50,7 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 SITE_ID = 1
 
-REST_USE_JWT = True
+# REST_USE_JWT = True
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
