@@ -20,18 +20,18 @@ import time
 import datetime
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes
+from django.contrib.auth.models import User
 
 load_dotenv()
 
+#? Neo4j Database
 class App:
 
-    # match (profile:Profile) create (post:Post {text:"lets f'in go",profile_id:profile.id}) create (profile) -[:Posted]-> (post) return profile
 
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
     def close(self):
-        # Don't forget to close the driver connection when you are finished with it
         self.driver.close()
 
     def serialize_post(self,result):
@@ -41,6 +41,29 @@ class App:
         post_data['edit'] = datetime.datetime.fromtimestamp( post_data.get('edit')/1000 )  
         post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
         return post_data
+
+    #!Add profile
+    def add_profile_helper(self, tx,username, profile_id):
+        query = (
+            "CREATE (profile:Profile {profile_id:$profile_id, username:$username}) RETURN profile"
+        )
+        result = tx.run(query, username=username, profile_id=profile_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def add_profile(self, profile_id, username):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.add_profile_helper, username, profile_id)
+            print(result)
+            return result
+
 
     #!Add post
     def add_post_helper(self, tx, text, profile_id):
@@ -155,24 +178,7 @@ class App:
         print(result)
         return [row["name"] for row in result]
     
-    def add_profile(self,tx,user_id,username):
-        query = (
-            "CREATE (post:Profile { user: $user_id,username:$username,create:TIMESTAMP(),edit:TIMESTAMP()}) "
-            "RETURN post"
-        )
-        result = tx.run(query, user_id=user_id, username=username)
-    
-        try:
-            print(result)
-            return [{"data": row["p1"]["name"], "p2": row["p2"]["name"]}
-                    for row in result]
-        # Capture any errors along with the query and data for traceability
-        except ServiceUnavailable as exception:
-            logging.error("{query} raised an error: \n {exception}".format(
-                query=query, exception=exception))
-            raise
-
-   
+#? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
 
 
@@ -237,24 +243,6 @@ def Register(request):
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
-@api_view(['POST']) 
-def AddProfile(request):
-    if request.data:
-        user = models.User.objects.get(id = request.data.get('user'))
-        profile = models.Profile.objects.filter(user=user)
-        if len(profile)>0:
-            serializer = serializers.ProfileSerializer(profile[0],many=False)
-            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
-        form = forms.ProfileForm(request.data)
-        if form.is_valid():
-            profile = form.save()
-            serializer = serializers.ProfileSerializer(profile,many=False)
-            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
-        else:
-            return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
-    else:
-        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
-
 #! POST CRUD
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
@@ -272,6 +260,7 @@ def AddPost(request):
 @permission_classes([AllowAny])
 def GetPost(request,id):
     result = app.get_post(id=id)
+    app.close()
     if result=="E":
         return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
     return Response({"msg_en":"Got the post successfully. ✨","msg_tr":"Gönderi başarıyla alındı. ✨","data":result},status=200)
@@ -307,6 +296,46 @@ def UpdatePost(request,id):
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
 
 #! PROFILE CRUD
+@api_view(['POST']) 
+def GoogleAddOrGetProfile(request,id):
+    if request.data:
+        user = User.objects.get(id = request.data.get('user'))
+        profile = models.Profile.objects.filter(user=user)
+        if len(profile)>0:
+            serializer = serializers.ProfileSerializer(profile[0],many=False)
+            return Response({"data":serializer.data},status=200)
+        form = forms.ProfileForm(request.data)
+        if form.is_valid():
+            profile = form.save()
+            app.add_profile(username=profile.user.username,profile_id=profile.id)
+            app.close()
+            serializer = serializers.ProfileSerializer(profile,many=False)
+            return Response({"data":serializer.data},status=200)
+        else:
+            return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+
+
+@api_view(['POST']) 
+def AddProfile(request):
+    if request.data:
+        user = User.objects.get(id = request.data.get('user'))
+        profile = models.Profile.objects.filter(user=user)
+        print(profile)
+        if len(profile)>0:
+            serializer = serializers.ProfileSerializer(profile[0],many=False)
+            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
+        form = forms.ProfileForm(request.data)
+        if form.is_valid():
+            profile = form.save()
+            serializer = serializers.ProfileSerializer(profile,many=False)
+            return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)
+        else:
+            return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+
 @api_view(['PUT'])    
 @permission_classes([IsAuthenticated])
 def UpdateProfile(request):
@@ -325,12 +354,12 @@ def UpdateProfile(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def GetProfile(request,id):
-    profile = models.Profile.objects.filter(user=models.User.objects.get(id=id))
+    profile = models.Profile.objects.filter(user=User.objects.get(id=id))
     if len(profile)>0:
         data = serializers.ProfileSerializer(profile[0],many=False)
         return Response({"data":data.data},status=200)
     else:
-        return Response({"msg_en":"Couldnt find profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter

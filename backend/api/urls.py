@@ -14,6 +14,7 @@ urlpatterns = [
 
     #TODO Profile
     path('profile/<int:id>',views.GetProfile),
+    path('profile/<int:id>/google',views.GoogleAddOrGetProfile),
     path('profile/add',views.AddProfile),
     path('profile/update', views.UpdateProfile),
     
