@@ -26,8 +26,6 @@ load_dotenv()
 
 #? Neo4j Database
 class App:
-
-
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
@@ -35,7 +33,7 @@ class App:
         self.driver.close()
 
     def serialize_post(self,result):
-        post_data = result[0].get('post')
+        post_data = result.get('post')
         profile = get_object_or_404(models.Profile,id=post_data['profile_id'])
         post_data['profile'] = serializers.ProfileSerializer(profile,many=False).data
         post_data['edit'] = datetime.datetime.fromtimestamp( post_data.get('edit')/1000 )  
@@ -61,7 +59,6 @@ class App:
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
                 self.add_profile_helper, username, profile_id)
-            print(result)
             return result
 
 
@@ -85,7 +82,7 @@ class App:
             # Write transactions allow the driver to handle retries and transient errors
             result = session.execute_write(
                 self.add_post_helper, text, profile_id)
-            output = self.serialize_post(result)
+            output = self.serialize_post(result[0])
             return output
 
     #!Delete post
@@ -135,7 +132,7 @@ class App:
                 self.get_post_helper,id=id)
             if result==[]:
                 return "E"
-            output = self.serialize_post(result)
+            output = self.serialize_post(result[0])
             return output
 
     #!Update post
@@ -149,7 +146,6 @@ class App:
         )
         result = tx.run(query,id=id,text=text)
         try:
-            print(result,"typo")
             return ([row.data()
                 for row in result])
         except ServiceUnavailable as exception:
@@ -162,21 +158,35 @@ class App:
             with self.driver.session(database="neo4j") as session:
                 result = session.execute_write(
                 self.update_post_helper,id=id,text=text)
-                output = self.serialize_post(result)
+                output = self.serialize_post(result[0])
                 return output
         else:
             print("no data given")
 
-
-    def filter_post_by_text(tx,text):
+    #!Filter post by text
+    def filter_post_text_helper(self,tx,text):
         query = (
-            "MATCH (post:Post) "
-            "WHERE post.text CONTAINS WITH '$text'"
-            "RETURN p.name AS name"
+            "MATCH (post:Post) "+ "WHERE post.text CONTAINS '"+text +"' RETURN post"
         )
-        result = tx.run(query, text=text)
-        print(result)
-        return [row["name"] for row in result]
+        result = tx.run(query,text=text)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def filter_post_text(self,text):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.filter_post_text_helper,text)
+            arr=[]
+            for i in result:
+                arr.append(self.serialize_post(i))
+            return arr
+
     
 #? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
@@ -270,7 +280,7 @@ def GetPost(request,id):
 @permission_classes([IsAuthenticated])
 def DeletePost(request,id):
     post = app.get_post(id=id)
-    if result=="E":
+    if post=="E":
         return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
     if request.user.id==post.get('profile').get('user').get('id'):
         result = app.delete_post(id=id)
@@ -294,6 +304,13 @@ def UpdatePost(request,id):
             return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=400)
     else:
         return Response({"msg_en":"Users dont match. 😒","msg_tr":"Kullanıcı uyuşmuyor. 😒"},status=400)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def FilterPostText(request):
+    post = app.filter_post_text(text=request.GET.get('text'))
+    return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=200)
+
 
 #! PROFILE CRUD
 @api_view(['POST']) 
@@ -322,7 +339,6 @@ def AddProfile(request):
     if request.data:
         user = User.objects.get(id = request.data.get('user'))
         profile = models.Profile.objects.filter(user=user)
-        print(profile)
         if len(profile)>0:
             serializer = serializers.ProfileSerializer(profile[0],many=False)
             return Response(jwt.encode(serializer.data, "secret", algorithm="HS256"),status=200)

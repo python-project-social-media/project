@@ -23,4 +23,5 @@ urlpatterns = [
     path('post/<int:id>', views.GetPost),
     path('post/<int:id>/delete', views.DeletePost),
     path('post/<int:id>/update', views.UpdatePost),
+    path('post/filter', views.FilterPostText),
 ]
