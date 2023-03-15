@@ -24,4 +24,10 @@ urlpatterns = [
     path('post/<int:id>/delete', views.DeletePost),
     path('post/<int:id>/update', views.UpdatePost),
     path('post/filter', views.FilterPostText),
+
+    #TODO News
+    path('news/<int:id>', views.GetNews),
+    path('news/add', views.AddNews),
+    path('news/<int:id>/delete', views.DeleteNews),
+    path('news/<int:id>/update', views.UpdateNews),
 ]

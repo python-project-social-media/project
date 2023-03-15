@@ -21,6 +21,7 @@ import datetime
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes
 from django.contrib.auth.models import User
+from django.core.files.storage import FileSystemStorage
 
 load_dotenv()
 
@@ -39,6 +40,15 @@ class App:
         post_data['edit'] = datetime.datetime.fromtimestamp( post_data.get('edit')/1000 )  
         post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
         return post_data
+
+    def serialize_news(self,result):
+        post_data = result.get('news')
+        profile = get_object_or_404(models.Profile,id=post_data['profile_id'])
+        post_data['profile'] = serializers.ProfileSerializer(profile,many=False).data
+        post_data['edit'] = datetime.datetime.fromtimestamp( post_data.get('edit')/1000 )  
+        post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
+        return post_data
+
 
     #!Add profile
     def add_profile_helper(self, tx,username, profile_id):
@@ -63,11 +73,11 @@ class App:
 
 
     #!Add post
-    def add_post_helper(self, tx, text, profile_id):
+    def add_post_helper(self, tx, file, text, profile_id):
         query = (
-            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
+            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
         )
-        result = tx.run(query, text=text, profile_id=profile_id)
+        result = tx.run(query, text=text, profile_id=profile_id,file=file)
         
         try:
                 return ([row.data()
@@ -77,11 +87,10 @@ class App:
                 query=query, exception=exception))
                 raise
         
-    def add_post(self, text, profile_id):
+    def add_post(self, file, text, profile_id):
         with self.driver.session(database="neo4j") as session:
-            # Write transactions allow the driver to handle retries and transient errors
             result = session.execute_write(
-                self.add_post_helper, text, profile_id)
+                self.add_post_helper, file, text, profile_id)
             output = self.serialize_post(result[0])
             return output
 
@@ -136,15 +145,16 @@ class App:
             return output
 
     #!Update post
-    def update_post_helper(self,tx,id,text):
+    def update_post_helper(self,tx,file, id,text,delete):
         query = (
             "MATCH (post:Post) "
             "WHERE ID(post)=$id "
             "SET post.text = $text "
             "SET post.update = TIMESTAMP() "
+            "SET post.file = $file "
             "RETURN post"
         )
-        result = tx.run(query,id=id,text=text)
+        result = tx.run(query,id=id,text=text,delete=delete,file=file)
         try:
             return ([row.data()
                 for row in result])
@@ -153,11 +163,11 @@ class App:
             query=query, exception=exception))
             raise
 
-    def update_post(self,id,text):
+    def update_post(self,id,file,text,delete):
         if text!=None:
             with self.driver.session(database="neo4j") as session:
                 result = session.execute_write(
-                self.update_post_helper,id=id,text=text)
+                self.update_post_helper,id=id,text=text,delete=delete,file=file)
                 output = self.serialize_post(result[0])
                 return output
         else:
@@ -187,11 +197,119 @@ class App:
                 arr.append(self.serialize_post(i))
             return arr
 
+
+    #!Add a news
+    def add_news_helper(self, tx, image, profile_id, description, title):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (news:News {title:$title,description:$description, image:$image, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Published]-> (news) RETURN news"
+        )
+        result = tx.run(query, description=description, profile_id=profile_id,images=image,title=title)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def add_news(self, image, profile_id, description, title):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.add_news_helper, image, profile_id, description, title)
+            output = (self.serialize_news(result[0]))
+            return output
+
+    #!Get a news
+    def get_news_helper(self, tx, id):
+        query = (
+            "MATCH (news:News) WHERE ID(news)=$id RETURN news"
+        )
+        result = tx.run(query, id=id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+      
+    def get_news(self, id):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.get_news_helper, id)
+            if len(result)==0:
+                return "E"
+            output = (self.serialize_news(result[0]))
+            return output
+
+    #!Delete a news  
+    def delete_news_helper(self, tx, id):
+        query = (
+            "MATCH (news:News) WHERE ID(news)=$id DETACH DELETE news"
+        )
+        result = tx.run(query, id=id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def delete_news(self, id):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.delete_news_helper, id)
+            return result
+
+    #!Update a news  
+    def update_news_helper(self, tx, image, id, title, description,delete):
+        if delete==True:
+            query=(
+                "MATCH (news:News) "
+                "WHERE ID(news)=$id "
+                "SET news.edit=TIMESTAMP() "
+                "SET news.title=$title "
+                "SET news.description=$description "
+                "SET news.image='' "
+                "RETURN news"
+            )
+        else:
+            query = (
+                "MATCH (news:News) "
+                "WHERE ID(news)=$id "
+                "SET news.edit=TIMESTAMP() "
+                "SET news.title=$title "
+                "SET news.description=$description "
+                "SET news.image=$image "
+                "RETURN news"
+            )
+        result = tx.run(query, id=id,title=title,description=description,image=image,delete=delete)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def update_news(self, image, id, title, description,delete):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.update_news_helper,image,id,title,description,delete)
+            output = self.serialize_news(result[0])
+            return output
+
     
 #? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
-
-
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
@@ -242,7 +360,8 @@ def Register(request):
             data = {"user":user}
             formprofile = forms.ProfileForm(data)
             if formprofile.is_valid():
-                formprofile.save()
+                profile = formprofile.save()
+                app.add_profile(profile.id,profile.user.username)
                 return Response({"msg_en":"Successfully registered. ✨","msg_tr":"Başarıyla kayıt olundu. ✨"},status=200)
             else:
                 user.delete()
@@ -253,14 +372,24 @@ def Register(request):
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
+
+
 #! POST CRUD
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def AddPost(request):
     if request.data:
-        profile = get_object_or_404(models.Profile,user=request.user)
-        post_data = (app.add_post(text=request.data.get('text'),profile_id=profile.id))
+        profile = models.Profile.objects.filter(user=request.user)
+        if len(profile)>0:
+            profile=profile[0]
+        else:
+            return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+        upload = request.FILES.get('upload')
+        fss = FileSystemStorage()
+        file = fss.save("posts"+"/"+upload.name, upload)
+        file_url = fss.url(file)
+        post_data = (app.add_post(file=file_url,text=request.data.get('text'),profile_id=profile.id))
         app.close()
         return Response({"data":post_data},status=200)
     else:
@@ -298,7 +427,17 @@ def UpdatePost(request,id):
         return Response({"msg_tr":"Gönderi bulunamadı. 😒","msg_en":"Post not fonund. 😒"},status=400)
     if request.user.id==post.get('profile').get('user').get('id'):
         if request.data:
-            post_data = app.update_post(id=id,text=request.data.get('text'))
+            if request.data.get('delete')=='true':
+                post_data = app.update_post(id=id,file='',text=request.data.get('text'),delete=True)
+            else:
+                upload = request.FILES.get('upload')
+                if upload!=None:
+                    fss = FileSystemStorage()
+                    file = fss.save("posts"+"/"+upload.name, upload)
+                    file_url = fss.url(file)
+                    post_data = app.update_post(id=id,file=file_url,text=request.data.get('text'),delete=False)
+                else:
+                    post_data = app.update_post(id=id,file='',text=request.data.get('text'),delete=False)
             return Response({"msg_en":"Successfully updated the post. 🚀","msg_tr":"Gönderi başarıyla güncellendi. 🚀","data":post_data},status=200)
         else:
             return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=400)
@@ -310,6 +449,7 @@ def UpdatePost(request,id):
 def FilterPostText(request):
     post = app.filter_post_text(text=request.GET.get('text'))
     return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=200)
+
 
 
 #! PROFILE CRUD
@@ -332,7 +472,6 @@ def GoogleAddOrGetProfile(request,id):
             return Response({"msg_en":"Data is not valid. 😥","msg_tr":"Veri doğru değil. 😥"},status=400)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
-
 
 @api_view(['POST']) 
 def AddProfile(request):
@@ -376,6 +515,80 @@ def GetProfile(request,id):
         return Response({"data":data.data},status=200)
     else:
         return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+
+
+
+#! NEWS CRUD
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAdminUser])
+def AddNews(request):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    if request.data:
+        upload = request.FILES.get('upload')
+        fss = FileSystemStorage()
+        file = fss.save("news"+"/"+upload.name, upload)
+        file_url = fss.url(file)
+        result = app.add_news(file_url,profile.id,request.data.get('description'),request.data.get('title'))
+        return Response({"msg_en":"Successfully added news. 🚀","msg_tr":"Haber başarıyla eklendi. 🚀","data":result},status=200)
+    else:
+        return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def GetNews(request,id):
+    result = app.get_news(id)
+    if result=="E":
+        return Response({"msg_en":"Couldnt find the news. 😶","msg_tr":"Haber bulunamadı. 😶"},status=400)
+    return Response({"data":result},status=200)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def DeleteNews(request,id):
+    result = app.get_news(id)
+    if result!="E":
+        if result.get('profile').get('user').get('id')!=request.user.id:
+            return Response({"msg_tr":"Bunu silmek için yetkiniz yok. 😥","msg_en":"You are not allowed to delete this news. 😥"},status=400)
+        else:
+            result = app.delete_news(id)
+            return Response({"msg_en":"Successfully deleted the news. ✨","msg_tr":"Haber başarıyla silindi. ✨"},status=200)
+    else:
+        return Response({"msg_en":"Couldnt find the news. 😶","msg_tr":"Haber bulunamadı. 😶"},status=400)
+
+@api_view(['PUT'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def UpdateNews(request,id):
+    result = app.get_news(id)
+    if result!="E":
+        if result.get('profile').get('user').get('id')!=request.user.id:
+            return Response({"msg_tr":"Bunu güncellemek için yetkiniz yok. 😥","msg_en":"You are not allowed to update this news. 😥"},status=400)
+        else:
+            if request.data:
+                if request.data.get('delete')=='true':
+                    result = app.update_news('',id,request.data.get('title'),request.data.get('description'),True)
+                else:
+                    upload = request.FILES.get('upload')
+                    if upload!=None:
+                        fss = FileSystemStorage()
+                        file = fss.save("news"+"/"+upload.name, upload)
+                        file_url = fss.url(file)
+                        print("FOTOTOTOTOTO",file_url)
+                        result = app.update_news(file_url,id,request.data.get('title'),request.data.get('description'),False)
+                    else:
+                        result = app.update_news('',id,request.data.get('title'),request.data.get('description'),False)
+                
+                return Response({"msg_en":"Successfully updated the news. ✨","msg_tr":"Haber başarıyla güncellendi. ✨","data":result},status=200)
+            else:
+                return Response({"msg_en":"No data was given. 🫥","msg_tr":"Bize veri verilmedi. 🫥"},status=400)
+    else:
+        return Response({"msg_en":"Couldnt find the news. 😶","msg_tr":"Haber bulunamadı. 😶"},status=400)
+
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
