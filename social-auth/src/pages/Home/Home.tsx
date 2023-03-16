@@ -33,6 +33,7 @@ function Home() {
       {profile ? (
         <>
           <div>Hi {profile.user.username}</div>
+          <img src={profile.profilePhotoUrl} className="w-8 h-8" />
           <div onClick={logout}>Logout</div>
         </>
       ) : (

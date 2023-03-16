@@ -17,6 +17,7 @@ urlpatterns = [
     path('profile/<int:id>/google',views.GoogleAddOrGetProfile),
     path('profile/add',views.AddProfile),
     path('profile/update', views.UpdateProfile),
+    path('profile/<int:follow_id>/follow', views.ToogleProfileFollow),
     
     #TODO Post
     path('post/add', views.AddPost),
@@ -24,6 +25,7 @@ urlpatterns = [
     path('post/<int:id>/delete', views.DeletePost),
     path('post/<int:id>/update', views.UpdatePost),
     path('post/filter', views.FilterPostText),
+    path('post/<int:post_id>/toggle', views.ToggleLikePost),
 
     #TODO News
     path('news/<int:id>', views.GetNews),

@@ -6,11 +6,15 @@ export default AuthContext;
 
 export const AuthProvider = ({ children }: any) => {
   const [profile, setProfile] = useState();
+  const [googleDataState, setGoogleDataState] = useState();
   const [key, setKey] = useState();
 
   useEffect(() => {
     if (localStorage.getItem("key")) {
-      getUserByKey(localStorage.getItem("key")!);
+      getUserByKeyGoogle(localStorage.getItem("key")!, googleDataState);
+    }
+    if (localStorage.getItem("nkey")) {
+      getUserByKey(localStorage.getItem("nkey")!);
     }
   }, [key]);
 
@@ -23,6 +27,38 @@ export const AuthProvider = ({ children }: any) => {
     }).then(async (resp: Response) => {
       let data = await resp.json();
       setProfile(data["data"]);
+    });
+  };
+
+  const GoogleGetProfile = async (id: number, googleData: any) => {
+    let postData: {} = {
+      user: id,
+      profilePhotoUrl: googleData?.picture,
+    };
+    let response = await fetch(
+      `http://localhost:8000/api/profile/${id}/google`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(postData),
+      }
+    ).then(async (resp: Response) => {
+      let data = await resp.json();
+      setProfile(data["data"]);
+    });
+  };
+
+  const getUserByKeyGoogle = async (key: string, googleData: any) => {
+    let response = await fetch("http://127.0.0.1:8000/api/auth/user/", {
+      method: "GET",
+      headers: {
+        Authorization: "Token " + key,
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      GoogleGetProfile(data["pk"], googleData);
     });
   };
 
@@ -50,8 +86,7 @@ export const AuthProvider = ({ children }: any) => {
       if (data["msg_en"] == "Profile already exists. 😥") {
         return;
       }
-      setProfile(jwt_decode(data));
-      localStorage.setItem("profile", data);
+      setProfile(data["data"]);
     });
   };
 
@@ -65,6 +100,30 @@ export const AuthProvider = ({ children }: any) => {
         },
         body: JSON.stringify({
           access_token: tokens.credential,
+        }),
+      }
+    ).then(async (resp: Response) => {
+      if (resp.status == 200) {
+        let googleData: any = await jwt_decode(tokens.credential);
+        setGoogleDataState(googleData);
+        let data: any = await resp.json();
+        setKey(data["key"]);
+        localStorage.setItem("key", data["key"]);
+      }
+    });
+  };
+
+  const login = (username: string, password: string) => {
+    let resp: Promise<Response | void> = fetch(
+      "http://127.0.0.1:8000/api/auth/login/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          password: password,
         }),
       }
     ).then(async (resp: Response) => {
@@ -86,6 +145,7 @@ export const AuthProvider = ({ children }: any) => {
       setKey(undefined);
       setProfile(undefined);
       localStorage.removeItem("key");
+      localStorage.removeItem("nkey");
       localStorage.removeItem("profile");
     });
   };
@@ -95,6 +155,7 @@ export const AuthProvider = ({ children }: any) => {
     responseGoogle: responseGoogle,
     addProfile: addProfile,
     logout: logout,
+    login: login,
   };
   return (
     <AuthContext.Provider value={contextData}>{children}</AuthContext.Provider>

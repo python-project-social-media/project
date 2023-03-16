@@ -27,6 +27,7 @@ load_dotenv()
 
 #? Neo4j Database
 class App:
+
     def __init__(self, uri, user, password):
         self.driver = GraphDatabase.driver(uri, auth=(user, password))
 
@@ -53,7 +54,7 @@ class App:
     #!Add profile
     def add_profile_helper(self, tx,username, profile_id):
         query = (
-            "CREATE (profile:Profile {profile_id:$profile_id, username:$username}) RETURN profile"
+            "CREATE (profile:Profile {profile_id:$profile_id, username:$username, followers_count:0, following_count:0}) RETURN profile"
         )
         result = tx.run(query, username=username, profile_id=profile_id)
         
@@ -71,11 +72,96 @@ class App:
                 self.add_profile_helper, username, profile_id)
             return result
 
+    #!Is following
+    def is_following_profile_helper(self, tx, profile_id, follow_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) " 
+            "MATCH (following_p:Profile {profile_id:$follow_id}) "
+            "RETURN EXISTS ((profile) -[:Following]-> (following_p))"
+        )
+        result = tx.run(query, profile_id=profile_id, follow_id=follow_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def is_following_profile(self,  profile_id, follow_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.is_following_profile_helper, profile_id=profile_id, follow_id=follow_id)
+            dp=result[0]
+            dp_values = dp.values()
+            state = False
+            for i in dp_values:
+                state=i
+            return state
+
+
+    #!Follow profile
+    def follow_profile_helper(self, tx, profile_id, follow_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "MATCH (following:Profile {profile_id:$follow_id}) "
+            "CREATE (profile) -[:Following]-> (following) "
+            "SET profile.following_count=profile.following_count + 1 "
+            "SET following.followers_count=following.followers_count + 1 "
+            "RETURN following"
+        )
+        result = tx.run(query, profile_id=profile_id, follow_id=follow_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def follow_profile(self,  profile_id, follow_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.follow_profile_helper, profile_id, follow_id)
+            return result
+
+
+    #!Unfollow profile
+    def unfollow_profile_helper(self, tx, profile_id, follow_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) " 
+            "MATCH (following:Profile {profile_id:$follow_id}) "
+            "MATCH (profile)-[r:Following]->(following) "
+            "DELETE r "
+            "SET profile.following_count=profile.following_count - 1 "
+            "SET following.followers_count=following.followers_count - 1 "
+            "RETURN following"
+        )
+        result = tx.run(query, profile_id=profile_id, follow_id=follow_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def unfollow_profile(self,  profile_id, follow_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.unfollow_profile_helper, profile_id=profile_id, follow_id=follow_id)
+            return result
+
+
+
 
     #!Add post
     def add_post_helper(self, tx, file, text, profile_id):
         query = (
-            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
+            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
         )
         result = tx.run(query, text=text, profile_id=profile_id,file=file)
         
@@ -197,6 +283,82 @@ class App:
                 arr.append(self.serialize_post(i))
             return arr
 
+    #!Like a post
+    def like_a_post_helper(self,tx,post_id,profile_id):
+        query = (
+            "MATCH (post:Post) WHERE ID(post)=$post_id MATCH (profile:Profile) WHERE profile.profile_id=$profile_id " 
+            "CREATE (profile) -[:Liked]-> (post) SET post.like_count=post.like_count + 1 RETURN post"
+        )
+        result = tx.run(query,post_id=post_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def like_a_post(self,post_id,profile_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.like_a_post_helper,post_id=post_id,profile_id=profile_id)
+            output = self.serialize_post(result[0])
+            return result
+
+    #!Check if liked
+    def check_if_liked_post_helper(self,tx,post_id,profile_id):
+        query = (
+            "MATCH (post:Post) "
+            "WHERE ID(post)=$post_id "
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "RETURN EXISTS( (profile) -[:Liked]-> (post) )"
+        )
+        result = tx.run(query,post_id=post_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def check_if_liked_post(self,post_id,profile_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.check_if_liked_post_helper,post_id=post_id,profile_id=profile_id)
+            dp=result[0]
+            dp_values = dp.values()
+            state = False
+            for i in dp_values:
+                state=i
+            return state
+
+    #!Take back like
+    def take_back_like_post_helper(self,tx,post_id,profile_id):
+        query = (
+            "MATCH (post:Post) WHERE ID(post)=$post_id MATCH (profile:Profile) WHERE profile.profile_id=$profile_id " 
+            "MATCH (profile) -[r:Liked]-> (post) SET post.like_count=post.like_count + 1 DELETE r RETURN post"
+        )
+        result = tx.run(query,post_id=post_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def take_back_like_post(self,post_id,profile_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.take_back_like_post_helper,post_id=post_id,profile_id=profile_id)
+            output = self.serialize_post(result[0])
+            return output
+
+
 
     #!Add a news
     def add_news_helper(self, tx, image, profile_id, description, title):
@@ -307,6 +469,7 @@ class App:
             output = self.serialize_news(result[0])
             return output
 
+
     
 #? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
@@ -386,10 +549,13 @@ def AddPost(request):
         else:
             return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
         upload = request.FILES.get('upload')
-        fss = FileSystemStorage()
-        file = fss.save("posts"+"/"+upload.name, upload)
-        file_url = fss.url(file)
-        post_data = (app.add_post(file=file_url,text=request.data.get('text'),profile_id=profile.id))
+        if upload!=None:
+            fss = FileSystemStorage()
+            file = fss.save("posts"+"/"+upload.name, upload)
+            file_url = fss.url(file)
+            post_data = (app.add_post(file=file_url,text=request.data.get('text'),profile_id=profile.id))
+        else:
+            post_data = (app.add_post(file="",text=request.data.get('text'),profile_id=profile.id))
         app.close()
         return Response({"data":post_data},status=200)
     else:
@@ -448,7 +614,27 @@ def UpdatePost(request,id):
 @permission_classes([AllowAny])
 def FilterPostText(request):
     post = app.filter_post_text(text=request.GET.get('text'))
-    return Response({"msg_en":"There is no data to update. 😒","msg_tr":"Güncelleyecek veri vermediniz. 😒"},status=200)
+    app.close()
+    return Response({"data":post},status=200)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def ToggleLikePost(request,post_id):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    state = app.check_if_liked_post(post_id,profile.id)
+    if state == False:
+        result = app.like_a_post(post_id,profile.id)
+        app.close()
+        return Response({"msg_en":"Successfully liked the post. 😄","msg_tr":"Gönderi başarıyla beğenildi. 😄","data":result},status=200)
+    else:
+        result = app.take_back_like_post(post_id,profile.id)
+        app.close()
+        return Response({"msg_en":"Successfully took your like back. 😄","msg_tr":"Beğenin başarıyla geri çekildi. 😄","data":result},status=200)
 
 
 
@@ -492,6 +678,7 @@ def AddProfile(request):
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
 
 @api_view(['PUT'])    
+@authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdateProfile(request):
     profile = get_object_or_404(models.Profile, id=request.user.id)
@@ -515,6 +702,30 @@ def GetProfile(request,id):
         return Response({"data":data.data},status=200)
     else:
         return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def ToogleProfileFollow(request,follow_id):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    follow = models.Profile.objects.filter(id=follow_id)
+    if len(follow)>0:
+        follow=follow[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    print(app.is_following_profile(profile.id,follow.id))
+    if app.is_following_profile(profile.id,follow.id)==True:
+        app.unfollow_profile(profile.id,follow.id)
+        app.close()
+        return Response({"msg_en":"Successfully unfollowed. 🚀","msg_tr":"Başarıyla takipten çıkıldı. 🚀"},status=200)
+    else:
+        app.follow_profile(profile.id,follow.id)
+        app.close()
+        return Response({"msg_en":"Successfully followed. 🚀","msg_tr":"Başarıyla takip edildi. 🚀"},status=200)
 
 
 
