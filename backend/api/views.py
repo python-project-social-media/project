@@ -50,6 +50,13 @@ class App:
         post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
         return post_data
 
+    def serialize_comment(self,result):
+        post_data = result.get('comment')
+        profile = get_object_or_404(models.Profile,id=post_data['profile_id'])
+        post_data['profile'] = serializers.ProfileSerializer(profile,many=False).data
+        post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
+        return post_data
+
 
     #!Add profile
     def add_profile_helper(self, tx,username, profile_id):
@@ -339,7 +346,7 @@ class App:
     def take_back_like_post_helper(self,tx,post_id,profile_id):
         query = (
             "MATCH (post:Post) WHERE ID(post)=$post_id MATCH (profile:Profile) WHERE profile.profile_id=$profile_id " 
-            "MATCH (profile) -[r:Liked]-> (post) SET post.like_count=post.like_count + 1 DELETE r RETURN post"
+            "MATCH (profile) -[r:Liked]-> (post) SET post.like_count=post.like_count - 1 DELETE r RETURN post"
         )
         result = tx.run(query,post_id=post_id,profile_id=profile_id)
         
@@ -470,7 +477,158 @@ class App:
             return output
 
 
-    
+    #!Get a comment
+    def get_comment_helper(self,tx,comment_id):
+        query = (
+            "MATCH (comment:Comment) WHERE ID(comment)=$comment_id "
+            "RETURN comment"
+        )
+        result = tx.run(query,comment_id=comment_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def get_comment(self,comment_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.get_comment_helper,comment_id=comment_id)
+            if len(result)==0:
+                return "E"
+            output = self.serialize_comment(result[0])
+            return output
+
+    #!Comment on post
+    def post_comment_helper(self,tx,post_id,profile_id,text):
+        query = (
+            "MATCH (post:Post) WHERE ID(post)=$post_id "
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "CREATE (comment:Comment {text:$text, profile_id:$profile_id,create:TIMESTAMP()}) "
+            "CREATE (profile) -[:Commented]-> (comment) "
+            "CREATE (comment) -[:Answered]-> (post)"
+            "RETURN comment"
+        )
+        result = tx.run(query,post_id=post_id,profile_id=profile_id,text=text)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def post_comment(self, post_id, profile_id,text):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.post_comment_helper,post_id=post_id,profile_id=profile_id,text=text)
+            output = self.serialize_comment(result[0])
+            return output
+
+    #!Delete a comment
+    def delete_comment_helper(self,tx,comment_id,profile_id):
+        query = (
+            "MATCH (comment:Comment) WHERE ID(comment)=$comment_id "
+            "DETACH DELETE comment"
+        )
+        result = tx.run(query,comment_id=comment_id,profile_id=profile_id)
+        
+        try:
+                return ([row.data()
+                    for row in result])
+        except ServiceUnavailable as exception:
+                logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+                raise
+        
+    def delete_comment(self,comment_id,profile_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.delete_comment_helper,comment_id=comment_id,profile_id=profile_id)
+            # output = self.serialize_comment(result[0])
+            return result
+
+    #!Check if muted
+    def check_mute_profile_helper(self,tx,profile_id,mute_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "MATCH (mute:Profile {profile_id:$mute_id}) "
+            "RETURN EXISTS ((profile)-[:Muted]->(mute))"
+        )
+        result = tx.run(query,mute_id=mute_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+        
+    def check_mute_profile(self,profile_id,mute_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.check_mute_profile_helper,mute_id=mute_id,profile_id=profile_id)
+            dp=result[0]
+            dp_values = dp.values()
+            state = False
+            for i in dp_values:
+                state=i
+            return state
+
+    #!Dont mute a profile
+    def dont_mute_profile_helper(self,tx,profile_id,mute_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "MATCH (mute:Profile {profile_id:$mute_id}) "
+            "MATCH (profile)-[r:Muted]->(mute) "
+            "DELETE r"
+        )
+        result = tx.run(query,mute_id=mute_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+        
+    def dont_mute_profile(self,profile_id,mute_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.dont_mute_profile_helper,mute_id=mute_id,profile_id=profile_id)
+            
+            return result
+
+    #!Mute a profile
+    def mute_profile_helper(self,tx,profile_id,mute_id):
+        query = (
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "MATCH (mute:Profile {profile_id:$mute_id}) "
+            "CREATE (profile)-[:Muted]->(mute)"
+        )
+        result = tx.run(query,mute_id=mute_id,profile_id=profile_id)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+        
+    def mute_profile(self,profile_id,mute_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.mute_profile_helper,mute_id=mute_id,profile_id=profile_id)
+            return result
+
+
 #? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
 
@@ -636,6 +794,40 @@ def ToggleLikePost(request,post_id):
         app.close()
         return Response({"msg_en":"Successfully took your like back. 😄","msg_tr":"Beğenin başarıyla geri çekildi. 😄","data":result},status=200)
 
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def AnswerPost(request,post_id):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    if request.data.get('text')!=None and len(request.data.get('text'))>4:
+        result = app.post_comment(post_id=post_id,profile_id=profile.id,text=request.data.get('text'))
+        app.close()
+        return Response({"msg_en":"Successfully commented. 🌝","msg_tr":"Başarıyla yorum yapıldı. 🌝","data":result},status=200)
+    else:
+        return Response({"msg_en":"Data is not valid. 🤨","msg_tr":"Veri doğru değil. 🤨"},status=400)
+
+@api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def DeleteAnswer(request,comment_id):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    comment = app.get_comment(comment_id=comment_id)
+    if comment=="E":
+        return Response({"msg_en":"Couldnt find the comment. 🫥","msg_tr":"Yorum bulunamadı. 🫥"},status=400)
+    id = comment.get('profile').get('id')
+    if id==profile.id:
+        app.delete_comment(comment_id=comment_id,profile_id=profile.id)
+        app.close()
+    return Response({"msg_en":"Successfully deleted comment. 🌝","msg_tr":"Yorum başarıyla silindi. 🌝"},status=200)
+
 
 
 #! PROFILE CRUD
@@ -717,7 +909,6 @@ def ToogleProfileFollow(request,follow_id):
         follow=follow[0]
     else:
         return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
-    print(app.is_following_profile(profile.id,follow.id))
     if app.is_following_profile(profile.id,follow.id)==True:
         app.unfollow_profile(profile.id,follow.id)
         app.close()
@@ -726,6 +917,31 @@ def ToogleProfileFollow(request,follow_id):
         app.follow_profile(profile.id,follow.id)
         app.close()
         return Response({"msg_en":"Successfully followed. 🚀","msg_tr":"Başarıyla takip edildi. 🚀"},status=200)
+
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def MuteProfile(request,mute_id):
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile)>0:
+        profile=profile[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    mute = models.Profile.objects.filter(id=mute_id)
+    if len(mute)>0:
+        mute=mute[0]
+    else:
+        return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    state = app.check_mute_profile(profile_id=profile.id,mute_id=mute.id)
+    print(state)
+    if state==True:
+        app.dont_mute_profile(profile_id=profile.id,mute_id=mute.id)
+        app.close()
+        return Response({"msg_en":"Successfully non-muted "+mute.user.username+". 😄","msg_tr":mute.user.username+" sessizliği başarıyla kaldırıldı. 😄"},status=200)
+    else:    
+        app.mute_profile(profile_id=profile.id,mute_id=mute.id)
+        app.close()
+        return Response({"msg_en":"Successfully muted "+mute.user.username+". 😄","msg_tr":mute.user.username+" başarıyla sessize alındı. 😄"},status=200)
 
 
 
@@ -789,7 +1005,6 @@ def UpdateNews(request,id):
                         fss = FileSystemStorage()
                         file = fss.save("news"+"/"+upload.name, upload)
                         file_url = fss.url(file)
-                        print("FOTOTOTOTOTO",file_url)
                         result = app.update_news(file_url,id,request.data.get('title'),request.data.get('description'),False)
                     else:
                         result = app.update_news('',id,request.data.get('title'),request.data.get('description'),False)
