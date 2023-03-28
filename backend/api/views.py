@@ -278,7 +278,7 @@ class App:
     #!Filter post by text
     def filter_post_text_helper(self,tx,text):
         query = (
-            "MATCH (post:Post) "+ "WHERE post.text CONTAINS '"+text +"' RETURN post"
+            "MATCH (post:Post) "+ "WHERE post.text CONTAINS '"+text +"' RETURN post ORDER BY post.create DESC"
         )
         result = tx.run(query,text=text)
         
@@ -298,6 +298,33 @@ class App:
             for i in result:
                 arr.append(self.serialize_post(i))
             return arr
+
+    #!Get the post that got most likes
+    def most_liked_post_helper(self,tx):
+        query = (
+            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post ORDER BY post.like_count DESC LIMIT 5"
+        )
+        result = tx.run(query)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def most_liked_post(self):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.most_liked_post_helper)
+            if result==[]:
+                return "E"
+            arr=[]
+            for i in result:
+                arr.append(self.serialize_post(i))
+            return arr
+
 
     #!Like a post
     def like_a_post_helper(self,tx,post_id,profile_id):
@@ -784,6 +811,14 @@ def FilterPostText(request):
     post = app.filter_post_text(text=request.GET.get('text'))
     app.close()
     return Response({"data":post},status=200)
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def MostLiked5Posts(request):
+    result = app.most_liked_post()
+    if result == "E":
+        return Response({"msg_en":"There is no data 🤨","msg_tr":"Veri yok. 🤨"},status =200)
+    return Response({"data":result},status=200)
 
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
