@@ -48,7 +48,7 @@ SOCIALACCOUNT_PROVIDERS = {
 
 CORS_ALLOW_ALL_ORIGINS = True
 
-SITE_ID = 1
+SITE_ID = 2
 
 # REST_USE_JWT = True
 
@@ -111,9 +111,6 @@ DATABASES = {
 
 
 
-# Password validation
-# https://docs.djangoproject.com/en/4.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
@@ -152,3 +149,11 @@ MEDIA_URL = 'media/'
 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = "587"
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = "besevler.mah.muh@gmail.com"
+EMAIL_HOST_PASSWORD = 'yeewkfrckfphikfa'

@@ -22,6 +22,16 @@ from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes
 from django.contrib.auth.models import User
 from django.core.files.storage import FileSystemStorage
+from allauth.account.forms import \
+    default_token_generator as allauth_token_generator
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_str
+from django.utils.http import int_to_base36, urlsafe_base64_decode
+from django.contrib.auth.models import User
+from django.http import Http404,HttpResponse
+from django.urls import reverse_lazy
+from django.views import View
+
 
 load_dotenv()
 
@@ -56,6 +66,7 @@ class App:
         post_data['profile'] = serializers.ProfileSerializer(profile,many=False).data
         post_data['create'] = datetime.datetime.fromtimestamp( post_data.get('create')/1000 ) 
         return post_data
+
 
 
     #!Add profile
@@ -107,7 +118,6 @@ class App:
                 state=i
             return state
 
-
     #!Follow profile
     def follow_profile_helper(self, tx, profile_id, follow_id):
         query = (
@@ -133,7 +143,6 @@ class App:
             result = session.execute_write(
                 self.follow_profile_helper, profile_id, follow_id)
             return result
-
 
     #!Unfollow profile
     def unfollow_profile_helper(self, tx, profile_id, follow_id):
@@ -372,7 +381,7 @@ class App:
         query = (
             "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (news:News {title:$title,description:$description, image:$image, profile_id:$profile_id, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Published]-> (news) RETURN news"
         )
-        result = tx.run(query, description=description, profile_id=profile_id,images=image,title=title)
+        result = tx.run(query, description=description, profile_id=profile_id,image=image,title=title)
         
         try:
                 return ([row.data()
@@ -475,7 +484,6 @@ class App:
                 self.update_news_helper,image,id,title,description,delete)
             output = self.serialize_news(result[0])
             return output
-
 
     #!Get a comment
     def get_comment_helper(self,tx,comment_id):
@@ -628,7 +636,6 @@ class App:
                 self.mute_profile_helper,mute_id=mute_id,profile_id=profile_id)
             return result
 
-
 #? Inıtalizing the database
 app = App(os.getenv('URI'),os.getenv('USER'),os.getenv('PASSWORD'))
 
@@ -675,7 +682,10 @@ def Routes(request):
 def Register(request):
     form = UserCreationForm()
     if request.data:
-        form = UserCreationForm(request.data)
+        mails = [i.email for i in User.objects.all()]
+        if request.data.get('email') in mails:
+            return Response({"msg_en":"This email already in use. 😢","msg_tr":"Girdiğiniz email kullanımda. 😢"},status=400)
+        form = forms.SignupForm(request.data)
         if form.is_valid():
             user = form.save()
             data = {"user":user}
@@ -688,7 +698,7 @@ def Register(request):
                 user.delete()
                 return Response({"msg_en":"An error occured. 🤔","msg_tr":"Bir hata oluştu. 🤔"},status=400)
         else:
-            
+            print(form.errors)
             return Response({"msg_en":"Data is not valid. 🤨","msg_tr":"Veri doğru değil. 🤨"},status=400)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
@@ -814,6 +824,7 @@ def AnswerPost(request,post_id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def DeleteAnswer(request,comment_id):
+    """Cevabın silinmesini sağlar, comment_id parametresini alır."""
     profile = models.Profile.objects.filter(user=request.user)
     if len(profile)>0:
         profile=profile[0]
@@ -833,6 +844,7 @@ def DeleteAnswer(request,comment_id):
 #! PROFILE CRUD
 @api_view(['POST']) 
 def GoogleAddOrGetProfile(request,id):
+    """Profil ekler, user verisini alır."""
     if request.data:
         user = User.objects.get(id = request.data.get('user'))
         profile = models.Profile.objects.filter(user=user)
@@ -853,6 +865,7 @@ def GoogleAddOrGetProfile(request,id):
 
 @api_view(['POST']) 
 def AddProfile(request):
+    """Profil ekler, user verisini alır."""
     if request.data:
         user = User.objects.get(id = request.data.get('user'))
         profile = models.Profile.objects.filter(user=user)
@@ -873,6 +886,9 @@ def AddProfile(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdateProfile(request):
+    """
+        Profili günceller bio, profilePhoto verilerini alır.
+    """
     profile = get_object_or_404(models.Profile, id=request.user.id)
     if request.data:
         if request.data.get('bio'):
@@ -888,6 +904,9 @@ def UpdateProfile(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def GetProfile(request,id):
+    """
+        Profili getirir, userın idsini alır.
+    """
     profile = models.Profile.objects.filter(user=User.objects.get(id=id))
     if len(profile)>0:
         data = serializers.ProfileSerializer(profile[0],many=False)
@@ -899,6 +918,9 @@ def GetProfile(request,id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def ToogleProfileFollow(request,follow_id):
+    """
+        Bir profili takip eder/takipten çıkar, takip edilen kişinin idsi follow_id olarak parametre alınır. 
+    """
     profile = models.Profile.objects.filter(user=request.user)
     if len(profile)>0:
         profile=profile[0]
@@ -922,6 +944,7 @@ def ToogleProfileFollow(request,follow_id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def MuteProfile(request,mute_id):
+    """Bir kişinin sessize alınmasını sağlar, mute_id parametresini alır."""
     profile = models.Profile.objects.filter(user=request.user)
     if len(profile)>0:
         profile=profile[0]
@@ -950,17 +973,22 @@ def MuteProfile(request,mute_id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAdminUser])
 def AddNews(request):
+    """Haber eklenmesini sağlar, upload, description, title verilerini alır."""
     profile = models.Profile.objects.filter(user=request.user)
     if len(profile)>0:
         profile=profile[0]
     else:
         return Response({"msg_en":"Couldnt find the profile. 🥲","msg_tr":"Profil bulunamadı. 🥲"},status=400)
+    
     if request.data:
-        upload = request.FILES.get('upload')
-        fss = FileSystemStorage()
-        file = fss.save("news"+"/"+upload.name, upload)
-        file_url = fss.url(file)
-        result = app.add_news(file_url,profile.id,request.data.get('description'),request.data.get('title'))
+        if request.FILES.get('upload')!=None:
+            upload = request.FILES.get('upload')
+            fss = FileSystemStorage()
+            file = fss.save("news"+"/"+upload.name, upload)
+            file_url = fss.url(file)
+            result = app.add_news(image=file_url,profile_id=profile.id,description=request.data.get('description'),title=request.data.get('title'))
+        else:
+            result = app.add_news(image="",profile_id=profile.id,description=request.data.get('description'),title=request.data.get('title'))
         return Response({"msg_en":"Successfully added news. 🚀","msg_tr":"Haber başarıyla eklendi. 🚀","data":result},status=200)
     else:
         return Response({"msg_en":"There was no data entered. 😒","msg_tr":"Bize veri verilmedi. 😒"},status=400)
@@ -968,6 +996,7 @@ def AddNews(request):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def GetNews(request,id):
+    """Haber getirilmesini sağlar, haberin idsini parametre alır."""
     result = app.get_news(id)
     if result=="E":
         return Response({"msg_en":"Couldnt find the news. 😶","msg_tr":"Haber bulunamadı. 😶"},status=400)
@@ -977,6 +1006,7 @@ def GetNews(request,id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def DeleteNews(request,id):
+    """Haber silinmesini sağlar, haberin idsini parametre alır."""
     result = app.get_news(id)
     if result!="E":
         if result.get('profile').get('user').get('id')!=request.user.id:
@@ -991,6 +1021,7 @@ def DeleteNews(request,id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdateNews(request,id):
+    """Haberin güncellenmesini sağlar, delete, title, description verilerini alır."""
     result = app.get_news(id)
     if result!="E":
         if result.get('profile').get('user').get('id')!=request.user.id:
@@ -1014,7 +1045,6 @@ def UpdateNews(request,id):
                 return Response({"msg_en":"No data was given. 🫥","msg_tr":"Bize veri verilmedi. 🫥"},status=400)
     else:
         return Response({"msg_en":"Couldnt find the news. 😶","msg_tr":"Haber bulunamadı. 😶"},status=400)
-
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter
