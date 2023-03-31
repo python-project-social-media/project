@@ -1,6 +1,11 @@
+import { Link } from "react-router-dom";
 import "./Header.css";
+import { useContext } from "react";
+import { HiBars3BottomRight } from "react-icons/hi2";
+import AuthContext from "../../context/context";
 
 function Header() {
+  let { profile, logout, toggleSidebar }: any = useContext(AuthContext);
   return (
     <div className="flex justify-center">
       <div className="container lg:px-12">
@@ -12,15 +17,27 @@ function Header() {
               className="w-9 h-9"
             />
           </div>
-          <div className="links flex gap-6 text-[#37902F] font-semibold">
-            <p className="active">Anasayfa</p>
+          <div className="links gap-6 hidden md:flex text-[#37902F] font-semibold">
+            <Link to={"/"} className="active">
+              Anasayfa
+            </Link>
             <p>En Popülerler</p>
             <p>Haberler</p>
-            <p>Haftanın Enleri</p>
+            <Link to={"/best-of-the-week"}>Haftanın Enleri</Link>
           </div>
-          <div className="auth-settings flex items-center gap-4">
-            <p className="text-sm font-normal">GİRİŞ</p>
-            <button className="register-button text-sm">KAYIT OL</button>
+          <div className="auth-settings hidden md:flex items-center gap-4">
+            {profile ? (
+              <button onClick={logout} className="register-button text-sm">
+                ÇIKIŞ YAP
+              </button>
+            ) : (
+              <>
+                <Link to={"/login"}>
+                  <div className="text-sm font-normal">GİRİŞ</div>
+                </Link>
+                <button className="register-button text-sm">KAYIT OL</button>
+              </>
+            )}
             <div className="h-6 bg-stone-400 w-[2px]"></div>
             <svg
               width="29"
@@ -37,6 +54,13 @@ function Header() {
                 fillOpacity="0.54"
               />
             </svg>
+          </div>
+          <div className="md:hidden block">
+            <HiBars3BottomRight
+              size={22}
+              className="cursor-pointer"
+              onClick={toggleSidebar}
+            />
           </div>
         </div>
       </div>

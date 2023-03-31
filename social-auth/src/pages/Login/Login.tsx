@@ -4,7 +4,7 @@ import jwt_decode from "jwt-decode";
 import { useContext, useState } from "react";
 import AuthContext from "src/context/context";
 function Login() {
-  let { responseGoogle, profile, login }: any = useContext(AuthContext);
+  let { responseGoogle, login }: any = useContext(AuthContext);
 
   const [username, setUsername]: any = useState("");
   const [password, setPassword]: any = useState("");

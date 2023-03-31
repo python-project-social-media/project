@@ -29,7 +29,7 @@ urlpatterns = [
     path('post/<int:id>/delete', views.DeletePost),
     path('post/<int:id>/update', views.UpdatePost),
     path('post/filter', views.FilterPostText),
-    path('post/most-liked', views.MostLiked5Posts),
+    path('post/most-liked', views.MostLikedPost),
     path('post/<int:post_id>/toggle', views.ToggleLikePost),
     path('post/<int:post_id>/answer', views.AnswerPost),
     path('answer/<int:comment_id>/delete', views.DeleteAnswer),

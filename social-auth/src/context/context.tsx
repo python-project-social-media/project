@@ -1,13 +1,15 @@
 import { createContext, useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 const AuthContext = createContext({});
-
+import { useNavigate } from "react-router-dom";
+import { log } from "console";
 export default AuthContext;
 
 export const AuthProvider = ({ children }: any) => {
   const [profile, setProfile] = useState();
   const [googleDataState, setGoogleDataState] = useState();
   const [key, setKey] = useState();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (localStorage.getItem("key")) {
@@ -131,6 +133,7 @@ export const AuthProvider = ({ children }: any) => {
         let data: any = await resp.json();
         setKey(data["key"]);
         localStorage.setItem("key", data["key"]);
+        navigate("/home");
       }
     });
   };
@@ -147,6 +150,25 @@ export const AuthProvider = ({ children }: any) => {
       localStorage.removeItem("key");
       localStorage.removeItem("nkey");
       localStorage.removeItem("profile");
+      navigate("/");
+    });
+  };
+
+  const toggleSidebar = () => {
+    const sidebar = document.querySelector(".sidebar");
+    sidebar?.classList.toggle("-right-full");
+    sidebar?.classList.toggle("right-0");
+  };
+
+  const MostLikedPost = async () => {
+    await fetch("http://127.0.0.1:8000/api/post/most-liked", {
+      method: "GET",
+      headers: {
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      return data.data[0];
     });
   };
 
@@ -156,6 +178,8 @@ export const AuthProvider = ({ children }: any) => {
     addProfile: addProfile,
     logout: logout,
     login: login,
+    toggleSidebar: toggleSidebar,
+    MostLikedPost: MostLikedPost,
   };
   return (
     <AuthContext.Provider value={contextData}>{children}</AuthContext.Provider>

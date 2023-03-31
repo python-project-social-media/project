@@ -302,7 +302,7 @@ class App:
     #!Get the post that got most likes
     def most_liked_post_helper(self,tx):
         query = (
-            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post ORDER BY post.like_count DESC LIMIT 5"
+            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post ORDER BY post.like_count DESC LIMIT 1"
         )
         result = tx.run(query)
         
@@ -814,10 +814,10 @@ def FilterPostText(request):
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
-def MostLiked5Posts(request):
+def MostLikedPost(request):
     result = app.most_liked_post()
     if result == "E":
-        return Response({"msg_en":"There is no data 🤨","msg_tr":"Veri yok. 🤨"},status =200)
+        return Response({"msg_en":"There is no data 🤨","msg_tr":"Veri yok. 🤨"},status=200)
     return Response({"data":result},status=200)
 
 @api_view(['POST'])
