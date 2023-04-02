@@ -9,20 +9,23 @@ import AuthProtect from "./pages/Protected/AuthProtect";
 import Footer from "./components/Footer/Footer";
 import HomeLoggedIn from "./pages/HomeLoggedIn/HomeLoggedIn";
 import BestOfWeek from "./pages/BestOfWeek/BestOfWeek";
+import Sidebar from "./components/Sidebar/Sidebar";
+import LoggedIn from "./pages/Protected/LoggedIn";
 
 function App() {
   return (
-    <div className="font-sans overflow-x-hidden">
-      <div className="h-full sidebar absolute md:hidden block -right-full top-0 bg-[#F6F6F6] w-1/2 z-20 shadow-md duration-300">
-        messi
-      </div>
+    <div className="font-sans">
       <GoogleOAuthProvider clientId="796799461942-os8v3rqcun15nbre1icr48qleieoklk2.apps.googleusercontent.com">
         <Router>
+          <Sidebar />
           <AuthProvider>
             <Header />
             <Routes>
-              <Route path="/home" element={<HomeLoggedIn />} />
-              <Route path="/best-of-the-week" element={<BestOfWeek />} />
+              <Route element={<LoggedIn />}>
+                <Route path="/home" element={<HomeLoggedIn />} />
+                <Route path="/best-of-the-week" element={<BestOfWeek />} />
+              </Route>
+
               <Route element={<AuthProtect />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />

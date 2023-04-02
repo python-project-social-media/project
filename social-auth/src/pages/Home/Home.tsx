@@ -10,8 +10,8 @@ import people from "src/assets/ios-people-outline.svg";
 import Mailbox from "src/assets/mailbox.svg";
 import Chatting from "src/assets/Chatting.svg";
 import Chat from "src/assets/Chat.svg";
+
 function Home() {
-  let { profile, logout }: any = useContext(AuthContext);
   return (
     <>
       <div className="flex justify-center">
@@ -32,7 +32,7 @@ function Home() {
             <img
               src={Wave}
               alt="Design"
-              className="w-64 absolute right-0 top-0"
+              className="w-64 absolute right-0 -z-30 top-0"
             />
           </div>
           {/* Triple */}
@@ -147,15 +147,6 @@ function Home() {
           </div>
         </div>
       </div>
-      {/* {profile ? (
-        <>
-          <div>Hi {profile.user.username}</div>
-          <img src={profile.profilePhotoUrl} className="w-8 h-8" />
-          <div onClick={logout}>Logout</div>
-        </>
-      ) : (
-        <Link to={"/login"}>Login</Link>
-      )} */}
     </>
   );
 }

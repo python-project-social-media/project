@@ -12,7 +12,7 @@ import {
 function Footer() {
   return (
     <div className="relative py-6 px-2 lg:px-10">
-      <div className="flex justify-center items-center">
+      <div className="flex justify-start px-4 items-center flex-wrap gap-6">
         <div>
           <div className="flex items-center gap-2">
             <img src={icon} alt="icon" className="w-12" />
@@ -24,7 +24,7 @@ function Footer() {
           </p>
           <p className="mt-2">© SportCom 2023</p>
         </div>
-        <div className="flex flex-auto justify-evenly items-start">
+        <div className="flex gap-6 flex-auto items-start flex-wrap">
           <div>
             <h4 className="text-[#37902F] font-semibold text-lg">COMPANY</h4>
             <p className="my-2">Donec dignissim</p>

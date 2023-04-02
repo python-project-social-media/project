@@ -1,10 +1,7 @@
-import React from "react";
-import Post from "../../components/Post/Post";
-
 function HomeLoggedIn() {
   return (
-    <div className="lg:px-10 px-6 mt-5">
-      <Post />
+    <div className="lg:px-10 h-screen px-6 mt-5">
+      <p>Home Logged in</p>
     </div>
   );
 }

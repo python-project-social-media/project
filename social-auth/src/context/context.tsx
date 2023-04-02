@@ -2,7 +2,7 @@ import { createContext, useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 const AuthContext = createContext({});
 import { useNavigate } from "react-router-dom";
-import { log } from "console";
+
 export default AuthContext;
 
 export const AuthProvider = ({ children }: any) => {
@@ -133,7 +133,6 @@ export const AuthProvider = ({ children }: any) => {
         let data: any = await resp.json();
         setKey(data["key"]);
         localStorage.setItem("key", data["key"]);
-        navigate("/home");
       }
     });
   };

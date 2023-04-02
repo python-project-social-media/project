@@ -6,3 +6,10 @@
   font-style: italic;
   font-size: 24px;
 }
+
+.en-rest {
+  background: linear-gradient(91.69deg, #000000 48.57%, #898989 67.34%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}

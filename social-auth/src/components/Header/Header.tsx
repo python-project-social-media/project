@@ -7,8 +7,8 @@ import AuthContext from "../../context/context";
 function Header() {
   let { profile, logout, toggleSidebar }: any = useContext(AuthContext);
   return (
-    <div className="flex justify-center">
-      <div className="container lg:px-12">
+    <div className="flex justify-center z-50">
+      <div className="px-3 w-full lg:px-12">
         <div className="header flex justify-between items-center p-3">
           <div className="icon">
             <img
@@ -58,7 +58,7 @@ function Header() {
           <div className="md:hidden block">
             <HiBars3BottomRight
               size={22}
-              className="cursor-pointer"
+              className="cursor-pointer z-50"
               onClick={toggleSidebar}
             />
           </div>

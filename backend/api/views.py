@@ -177,7 +177,7 @@ class App:
     #!Add post
     def add_post_helper(self, tx, file, text, profile_id):
         query = (
-            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
+            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post"
         )
         result = tx.run(query, text=text, profile_id=profile_id,file=file)
         
@@ -318,6 +318,32 @@ class App:
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
                 self.most_liked_post_helper)
+            if result==[]:
+                return "E"
+            arr=[]
+            for i in result:
+                arr.append(self.serialize_post(i))
+            return arr
+
+    #!Most commented post
+    def most_commented_post_helper(self,tx):
+        query = (
+            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post ORDER BY post.comment_count DESC LIMIT 1"
+        )
+        result = tx.run(query)
+        
+        try:
+            return ([row.data()
+                for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+            query=query, exception=exception))
+            raise
+
+    def most_commented_post(self):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.most_commented_post_helper)
             if result==[]:
                 return "E"
             arr=[]
@@ -545,6 +571,7 @@ class App:
             "CREATE (comment:Comment {text:$text, profile_id:$profile_id,create:TIMESTAMP()}) "
             "CREATE (profile) -[:Commented]-> (comment) "
             "CREATE (comment) -[:Answered]-> (post)"
+            "SET post.comment_count=post.comment_count + 1 "
             "RETURN comment"
         )
         result = tx.run(query,post_id=post_id,profile_id=profile_id,text=text)
@@ -568,6 +595,8 @@ class App:
     def delete_comment_helper(self,tx,comment_id,profile_id):
         query = (
             "MATCH (comment:Comment) WHERE ID(comment)=$comment_id "
+            "MATCH (comment) -[:Answered]-> (post:Post) "
+            "SET post.comment_count = post.comment_count - 1 "
             "DETACH DELETE comment"
         )
         result = tx.run(query,comment_id=comment_id,profile_id=profile_id)
@@ -584,7 +613,6 @@ class App:
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
                 self.delete_comment_helper,comment_id=comment_id,profile_id=profile_id)
-            # output = self.serialize_comment(result[0])
             return result
 
     #!Check if muted
@@ -820,6 +848,15 @@ def MostLikedPost(request):
         return Response({"msg_en":"There is no data 🤨","msg_tr":"Veri yok. 🤨"},status=200)
     return Response({"data":result},status=200)
 
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def MostCommentedPost(request):
+    result = app.most_commented_post()
+    if result == "E":
+        return Response({"msg_en":"There is no data 🤨","msg_tr":"Veri yok. 🤨"},status=200)
+    return Response({"data":result},status=200)
+
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -869,11 +906,13 @@ def DeleteAnswer(request,comment_id):
     if comment=="E":
         return Response({"msg_en":"Couldnt find the comment. 🫥","msg_tr":"Yorum bulunamadı. 🫥"},status=400)
     id = comment.get('profile').get('id')
+    print(profile.id,id)
     if id==profile.id:
         app.delete_comment(comment_id=comment_id,profile_id=profile.id)
         app.close()
-    return Response({"msg_en":"Successfully deleted comment. 🌝","msg_tr":"Yorum başarıyla silindi. 🌝"},status=200)
-
+        return Response({"msg_en":"Successfully deleted comment. 🌝","msg_tr":"Yorum başarıyla silindi. 🌝"},status=200)
+    else:
+        return Response({"msg_en":"Users dont mach. 🥲","msg_tr":"Kullanıcılar uyuşmuyor. 🥲"},status=400)
 
 
 #! PROFILE CRUD
