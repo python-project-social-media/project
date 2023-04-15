@@ -29,11 +29,6 @@ function Home() {
               </h3>
             </div>
             <img src={Chat} className="w-1/3" />
-            <img
-              src={Wave}
-              alt="Design"
-              className="w-64 absolute right-0 -z-30 top-0"
-            />
           </div>
           {/* Triple */}
           <div className="flex justify-between items-center mt-10 pt-5 font-bold">

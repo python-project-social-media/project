@@ -11,24 +11,25 @@ import HomeLoggedIn from "./pages/HomeLoggedIn/HomeLoggedIn";
 import BestOfWeek from "./pages/BestOfWeek/BestOfWeek";
 import Sidebar from "./components/Sidebar/Sidebar";
 import LoggedIn from "./pages/Protected/LoggedIn";
+import Register from "./pages/Register/Register";
+import PostDetail from "./pages/PostDetail/PostDetail";
 
 function App() {
   return (
     <div className="font-sans">
       <GoogleOAuthProvider clientId="796799461942-os8v3rqcun15nbre1icr48qleieoklk2.apps.googleusercontent.com">
         <Router>
-          <Sidebar />
           <AuthProvider>
+            <Sidebar />
             <Header />
             <Routes>
-              <Route element={<LoggedIn />}>
-                <Route path="/home" element={<HomeLoggedIn />} />
-                <Route path="/best-of-the-week" element={<BestOfWeek />} />
-              </Route>
-
+              <Route path="/home" element={<HomeLoggedIn />} />
+              <Route path="/best-of-the-week" element={<BestOfWeek />} />
+              <Route path="/post/:id" element={<PostDetail />} />
               <Route element={<AuthProtect />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
               </Route>
             </Routes>
             <Footer />

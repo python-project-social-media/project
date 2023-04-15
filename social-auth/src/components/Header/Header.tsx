@@ -3,6 +3,7 @@ import "./Header.css";
 import { useContext } from "react";
 import { HiBars3BottomRight } from "react-icons/hi2";
 import AuthContext from "../../context/context";
+import Wave from "src/assets/Wave.svg";
 
 function Header() {
   let { profile, logout, toggleSidebar }: any = useContext(AuthContext);
@@ -10,32 +11,65 @@ function Header() {
     <div className="flex justify-center z-50">
       <div className="px-3 w-full lg:px-12">
         <div className="header flex justify-between items-center p-3">
-          <div className="icon">
+          <img
+            src={Wave}
+            alt="Design"
+            className="w-64 absolute right-0 -z-30 top-0"
+          />
+          <Link to={"/"} className="icon">
             <img
               src="https://www.freepnglogos.com/uploads/sport-png/sport-run-for-fun-south-cambs-district-council-24.png"
               alt="SportCom"
               className="w-9 h-9"
             />
-          </div>
+          </Link>
           <div className="links gap-6 hidden md:flex text-[#37902F] font-semibold">
-            <Link to={"/"} className="active">
-              Anasayfa
-            </Link>
+            {profile ? (
+              <Link to={"/home"} className="active">
+                Anasayfa
+              </Link>
+            ) : (
+              <Link to={"/"} className="active">
+                Anasayfa
+              </Link>
+            )}
+
             <p>En Popülerler</p>
             <p>Haberler</p>
             <Link to={"/best-of-the-week"}>Haftanın Enleri</Link>
           </div>
           <div className="auth-settings hidden md:flex items-center gap-4">
             {profile ? (
-              <button onClick={logout} className="register-button text-sm">
-                ÇIKIŞ YAP
-              </button>
+              <>
+                {profile.profilePhotoUrl ? (
+                  <img
+                    src={profile.profilePhotoUrl}
+                    className="rounded-full select-none w-8 h-8 "
+                  />
+                ) : (
+                  <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                    {profile.user.username.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+
+                <button
+                  onClick={logout}
+                  className="register-button hover:shadow-md duration-200 text-sm"
+                >
+                  ÇIKIŞ YAP
+                </button>
+              </>
             ) : (
               <>
                 <Link to={"/login"}>
                   <div className="text-sm font-normal">GİRİŞ</div>
                 </Link>
-                <button className="register-button text-sm">KAYIT OL</button>
+                <Link
+                  to={"/register"}
+                  className="register-button hover:shadow-md duration-200 text-sm"
+                >
+                  KAYIT OL
+                </Link>
               </>
             )}
             <div className="h-6 bg-stone-400 w-[2px]"></div>

@@ -1,15 +1,18 @@
 .fade-bg {
-  animation: fade 1.3s infinite;
+  background: linear-gradient(
+    120deg,
+    #e5e5e5 30%,
+    #f0f0f0f0 38%,
+    #f0f0f0f0 40%,
+    #e5e5e5 48%
+  );
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  animation: fade 1.8s infinite;
 }
 
 @keyframes fade {
-  0% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.3;
-  }
   100% {
-    opacity: 1;
+    background-position: -100% 0%;
   }
 }

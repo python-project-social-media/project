@@ -4,7 +4,9 @@ import { Navigate, Outlet } from "react-router-dom";
 
 const LoggedIn = () => {
   let { profile }: any = useContext(AuthContext);
-  return !profile ? <Navigate to="/" /> : <Outlet />;
+  console.log("varsa");
+
+  return profile ? <Outlet /> : <Navigate to="/" />;
 };
 
 export default LoggedIn;

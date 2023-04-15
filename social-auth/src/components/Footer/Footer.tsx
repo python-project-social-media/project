@@ -1,4 +1,3 @@
-import React from "react";
 import FooterDesign from "src/assets/footerDesign.svg";
 import Rectangle from "src/assets/Rectangle.svg";
 import icon from "src/assets/icon.png";
@@ -11,7 +10,7 @@ import {
 
 function Footer() {
   return (
-    <div className="relative py-6 px-2 lg:px-10">
+    <div className="relative py-6 px-2 mt-24 lg:px-10">
       <div className="flex justify-start px-4 items-center flex-wrap gap-6">
         <div>
           <div className="flex items-center gap-2">

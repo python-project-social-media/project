@@ -4,7 +4,9 @@ import { Navigate, Outlet } from "react-router-dom";
 
 const AuthProtect = () => {
   let { profile }: any = useContext(AuthContext);
-  return profile ? <Navigate to="/" /> : <Outlet />;
+  console.log("yoksa");
+
+  return !profile ? <Outlet /> : <Navigate to="/home" />;
 };
 
 export default AuthProtect;

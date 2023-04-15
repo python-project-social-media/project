@@ -1,12 +1,14 @@
-import React, { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import AuthContext from "../../context/context";
 import Post from "../../components/Post/Post";
 import "./BestOfWeek.css";
+import PostI from "../../interfaces/Post";
 
 function BestOfWeek() {
-  const [post, setPost] = useState({});
+  const [mostLiked, setMostLiked] = useState<PostI>();
+  const [mostCommented, setMostCommented] = useState<PostI>();
   const { MostLikedPost }: any = useContext(AuthContext);
-  useEffect((): any => {
+  useEffect(() => {
     fetch("http://127.0.0.1:8000/api/post/most-liked", {
       method: "GET",
       headers: {
@@ -14,7 +16,21 @@ function BestOfWeek() {
       },
     }).then(async (resp: Response) => {
       let data = await resp.json();
-      setPost(data.data[0]);
+      if (data.data) {
+        setMostLiked(data.data[0]);
+      }
+    });
+
+    fetch("http://127.0.0.1:8000/api/post/most-commented", {
+      method: "GET",
+      headers: {
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      if (data.data) {
+        setMostCommented(data.data[0]);
+      }
     });
   }, []);
   return (
@@ -24,7 +40,7 @@ function BestOfWeek() {
           <span className="en">En</span>
           <span className="en-rest ml-[0.3rem]">çok beğenilen gönderi</span>
         </h3>
-        <Post post={post} />
+        <Post post={mostLiked} key={mostLiked?.id} />
       </div>
       <div className="flex justify-end flex-1">
         <div className="max-w-[300x]">
@@ -32,7 +48,7 @@ function BestOfWeek() {
             <span className="en">En</span>
             <span className="en-rest ml-[0.3rem]">çok yorum alan gönderi</span>
           </h3>
-          <Post post={post} />
+          <Post post={mostCommented} key={mostCommented?.id} />
         </div>
       </div>
     </div>

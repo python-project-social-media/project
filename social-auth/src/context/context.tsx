@@ -2,6 +2,7 @@ import { createContext, useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 const AuthContext = createContext({});
 import { useNavigate } from "react-router-dom";
+import PostI from "../interfaces/Post";
 
 export default AuthContext;
 
@@ -14,8 +15,7 @@ export const AuthProvider = ({ children }: any) => {
   useEffect(() => {
     if (localStorage.getItem("key")) {
       getUserByKeyGoogle(localStorage.getItem("key")!, googleDataState);
-    }
-    if (localStorage.getItem("nkey")) {
+    } else if (localStorage.getItem("nkey")) {
       getUserByKey(localStorage.getItem("nkey")!);
     }
   }, [key]);
@@ -92,7 +92,7 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
-  const responseGoogle = async (tokens: any) => {
+  const responseGoogle = async (tokens: {}) => {
     let resp: Promise<Response | void> = fetch(
       "http://localhost:8000/api/rest-auth/google/",
       {
@@ -137,6 +137,38 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const register = (
+    username: string,
+    first_name: string,
+    last_name: string,
+    email: string,
+    password: string,
+    passworda: string
+  ) => {
+    let resp: Promise<Response | void> = fetch(
+      "http://127.0.0.1:8000/api/register",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: username,
+          email: email,
+          first_name: first_name,
+          last_name: last_name,
+          password1: password,
+          password2: passworda,
+        }),
+      }
+    ).then(async (resp: Response) => {
+      if (resp.status == 200) {
+        let data: any = await resp.json();
+        navigate("/login");
+      }
+    });
+  };
+
   const logout = async () => {
     let resp = await fetch("http://127.0.0.1:8000/api/auth/logout/", {
       method: "POST",
@@ -177,9 +209,11 @@ export const AuthProvider = ({ children }: any) => {
     addProfile: addProfile,
     logout: logout,
     login: login,
+    register: register,
     toggleSidebar: toggleSidebar,
     MostLikedPost: MostLikedPost,
   };
+
   return (
     <AuthContext.Provider value={contextData}>{children}</AuthContext.Provider>
   );

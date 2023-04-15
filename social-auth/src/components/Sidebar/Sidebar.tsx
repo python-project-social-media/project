@@ -10,7 +10,6 @@ function Sidebar() {
     sidebar?.classList.toggle("right-0");
   }
   let { profile, logout }: any = useContext(AuthContext);
-  console.log(profile);
 
   return (
     <div className="h-full sidebar py-5 px-6 fixed md:hidden block -right-full top-0 bg-[#F6F6F6] w-5/6 sm:w-3/4 z-50 shadow-md duration-300">
@@ -22,9 +21,15 @@ function Sidebar() {
         />
       </div>
       <div className="flex flex-col items-end text-lg font-semibold text-[#37902F] gap-6 mt-5">
-        <Link to={"/"} className="w-fit">
-          Anasayfa
-        </Link>
+        {profile ? (
+          <Link to={"/home"} className="active">
+            Anasayfa
+          </Link>
+        ) : (
+          <Link to={"/"} className="active">
+            Anasayfa
+          </Link>
+        )}
         <Link to={"/"} className="w-fit">
           En Popülerler
         </Link>
@@ -35,9 +40,18 @@ function Sidebar() {
           Haftanın Enleri
         </Link>
         {profile ? (
-          <div onClick={logout}>Çıkış Yap</div>
+          <div
+            onClick={logout}
+            className="register-button text-sm px-4 cursor-pointer"
+          >
+            Çıkış Yap
+          </div>
         ) : (
-          <Link to={"/login"}>Giriş Yap</Link>
+          <Link to={"/login"}>
+            <div className="text-sm font-normal register-button px-4">
+              Giriş Yap
+            </div>
+          </Link>
         )}
       </div>
     </div>
