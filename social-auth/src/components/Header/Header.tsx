@@ -4,9 +4,11 @@ import { useContext } from "react";
 import { HiBars3BottomRight } from "react-icons/hi2";
 import AuthContext from "../../context/context";
 import Wave from "src/assets/Wave.svg";
-
+import { useLocation } from "react-router-dom";
 function Header() {
   let { profile, logout, toggleSidebar }: any = useContext(AuthContext);
+  const { pathname } = useLocation();
+
   return (
     <div className="flex justify-center z-50">
       <div className="px-3 w-full lg:px-12">
@@ -25,7 +27,10 @@ function Header() {
           </Link>
           <div className="links gap-6 hidden md:flex text-[#37902F] font-semibold">
             {profile ? (
-              <Link to={"/home"} className="active">
+              <Link
+                to={"/home"}
+                className={pathname == "/home" ? "active" : ""}
+              >
                 Anasayfa
               </Link>
             ) : (
@@ -36,7 +41,12 @@ function Header() {
 
             <p>En Popülerler</p>
             <p>Haberler</p>
-            <Link to={"/best-of-the-week"}>Haftanın Enleri</Link>
+            <Link
+              to={"/best-of-the-week"}
+              className={pathname == "/best-of-the-week" ? "active" : ""}
+            >
+              Haftanın Enleri
+            </Link>
           </div>
           <div className="auth-settings hidden md:flex items-center gap-4">
             {profile ? (

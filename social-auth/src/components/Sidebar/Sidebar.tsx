@@ -2,8 +2,11 @@ import { useContext } from "react";
 import { HiBars3BottomRight } from "react-icons/hi2";
 import { Link } from "react-router-dom";
 import AuthContext from "../../context/context";
+import { useLocation } from "react-router-dom";
 
 function Sidebar() {
+  const { pathname } = useLocation();
+
   function toggleSidebar() {
     const sidebar = document.querySelector(".sidebar");
     sidebar?.classList.toggle("-right-full");
@@ -22,11 +25,11 @@ function Sidebar() {
       </div>
       <div className="flex flex-col items-end text-lg font-semibold text-[#37902F] gap-6 mt-5">
         {profile ? (
-          <Link to={"/home"} className="active">
+          <Link to={"/home"} className={pathname == "/home" ? "active" : ""}>
             Anasayfa
           </Link>
         ) : (
-          <Link to={"/"} className="active">
+          <Link to={"/"} className={pathname == "/" ? "active" : ""}>
             Anasayfa
           </Link>
         )}
@@ -36,7 +39,10 @@ function Sidebar() {
         <Link to={"/"} className="w-fit">
           Haberler
         </Link>
-        <Link to={"/best-of-the-week"} className="w-fit">
+        <Link
+          to={"/best-of-the-week"}
+          className={pathname == "/best-of-the-week" ? "active w-fit" : "w-fit"}
+        >
           Haftanın Enleri
         </Link>
         {profile ? (

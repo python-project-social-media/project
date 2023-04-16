@@ -365,7 +365,7 @@ class App:
     def get_posts_comments_helper(self, tx, post_id):
         query = (
             "MATCH (post:Post) WHERE ID(post)=$post_id "
-            "MATCH (comment:Comment) -[:Answered]-> (post) RETURN comment"
+            "MATCH (comment:Comment) -[:Answered]-> (post) RETURN comment,ID(comment)"
         )
         result = tx.run(query, post_id=post_id)
 
@@ -380,16 +380,16 @@ class App:
     def get_posts_comments(self, post_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.get_posts_comments_helper, post_id)
-            print(result)
+                self.get_posts_comments_helper, post_id=post_id)
             arr = []
-
             for i in result:
+                id = i.get('ID(comment)')
                 i = i.get('comment')
                 profile = get_object_or_404(
                     models.Profile, id=i.get('profile_id'))
                 i['profile'] = serializers.ProfileSerializer(
                     profile, many=False).data
+                i['id'] = id
                 arr.append(i)
             return arr
 
@@ -445,7 +445,6 @@ class App:
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
                 self.like_a_post_helper, post_id=post_id, profile_id=profile_id)
-            print(result)
             output = self.serialize_post(result[0])
             return output
 
@@ -984,6 +983,7 @@ def DeleteAnswer(request, comment_id):
 @permission_classes([AllowAny])
 def GetComments(request, post_id):
     data = app.get_posts_comments(post_id)
+    app.close()
     return Response({"data": data}, status=200)
 
 

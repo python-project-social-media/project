@@ -1,4 +1,5 @@
 export interface Comment {
+  id: string;
   profile_id: number;
   create: number;
   text: string;
