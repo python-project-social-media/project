@@ -37,23 +37,20 @@ export const AuthProvider = ({ children }: any) => {
       user: id,
       profilePhotoUrl: googleData?.picture,
     };
-    let response = await fetch(
-      `http://localhost:8000/api/profile/${id}/google`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      }
-    ).then(async (resp: Response) => {
+    await fetch(`http://localhost:8000/api/profile/${id}/google`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(postData),
+    }).then(async (resp: Response) => {
       let data = await resp.json();
       setProfile(data["data"]);
     });
   };
 
   const getUserByKeyGoogle = async (key: string, googleData: any) => {
-    let response = await fetch("http://127.0.0.1:8000/api/auth/user/", {
+    await fetch("http://127.0.0.1:8000/api/auth/user/", {
       method: "GET",
       headers: {
         Authorization: "Token " + key,
@@ -65,7 +62,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const getUserByKey = async (key: string) => {
-    let response = await fetch("http://127.0.0.1:8000/api/auth/user/", {
+    await fetch("http://127.0.0.1:8000/api/auth/user/", {
       method: "GET",
       headers: {
         Authorization: "Token " + key,
@@ -77,7 +74,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const addProfile = async (data: any) => {
-    let response = await fetch("http://localhost:8000/api/profile/add", {
+    await fetch("http://localhost:8000/api/profile/add", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -93,18 +90,15 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const responseGoogle = async (tokens: {}) => {
-    let resp: Promise<Response | void> = fetch(
-      "http://localhost:8000/api/rest-auth/google/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          access_token: tokens.credential,
-        }),
-      }
-    ).then(async (resp: Response) => {
+    await fetch("http://localhost:8000/api/rest-auth/google/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        access_token: tokens.credential,
+      }),
+    }).then(async (resp: Response) => {
       if (resp.status == 200) {
         let googleData: any = await jwt_decode(tokens.credential);
         setGoogleDataState(googleData);
@@ -115,20 +109,17 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
-  const login = (username: string, password: string) => {
-    let resp: Promise<Response | void> = fetch(
-      "http://127.0.0.1:8000/api/auth/login/",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: username,
-          password: password,
-        }),
-      }
-    ).then(async (resp: Response) => {
+  const login = async (username: string, password: string) => {
+    await fetch("http://127.0.0.1:8000/api/auth/login/", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: username,
+        password: password,
+      }),
+    }).then(async (resp: Response) => {
       if (resp.status == 200) {
         let data: any = await resp.json();
         setKey(data["key"]);
@@ -137,7 +128,7 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
-  const register = (
+  const register = async (
     username: string,
     first_name: string,
     last_name: string,
@@ -145,23 +136,20 @@ export const AuthProvider = ({ children }: any) => {
     password: string,
     passworda: string
   ) => {
-    let resp: Promise<Response | void> = fetch(
-      "http://127.0.0.1:8000/api/register",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: username,
-          email: email,
-          first_name: first_name,
-          last_name: last_name,
-          password1: password,
-          password2: passworda,
-        }),
-      }
-    ).then(async (resp: Response) => {
+    await fetch("http://127.0.0.1:8000/api/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: username,
+        email: email,
+        first_name: first_name,
+        last_name: last_name,
+        password1: password,
+        password2: passworda,
+      }),
+    }).then(async (resp: Response) => {
       if (resp.status == 200) {
         let data: any = await resp.json();
         navigate("/login");
@@ -170,7 +158,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const logout = async () => {
-    let resp = await fetch("http://127.0.0.1:8000/api/auth/logout/", {
+    await fetch("http://127.0.0.1:8000/api/auth/logout/", {
       method: "POST",
       headers: {
         Authorization: "Token " + localStorage.getItem("key"),

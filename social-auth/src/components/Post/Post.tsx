@@ -2,12 +2,16 @@ import { BsThreeDots } from "react-icons/bs";
 import { AiFillHeart } from "react-icons/ai";
 import { TfiCommentAlt } from "react-icons/tfi";
 import "./Post.css";
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { Post as PostI } from "../../interfaces/Post";
 import { Link } from "react-router-dom";
+import AuthContext from "../../context/context";
 
 function Post(post: { post: PostI | undefined }) {
+  const { profile }: any = useContext(AuthContext);
   const [Post, setPost] = useState<PostI | undefined>(post.post);
+  console.log(profile?.id, Post?.profile_id, profile?.id == Post?.profile_id);
+
   const postliketoggle = async () => {
     await fetch(`http://127.0.0.1:8000/api/post/${Post?.id}/toggle`, {
       method: "POST",
@@ -43,10 +47,10 @@ function Post(post: { post: PostI | undefined }) {
                   <p className="font-bold scale-110">•</p>
                   <p>4g</p>
                 </div>
-                <BsThreeDots />
+                {profile?.id == Post?.profile_id ? <BsThreeDots /> : null}
               </div>
               <p className="my-2">{Post?.text}</p>
-              {Post.file != "" ? (
+              {Post?.file != "" ? (
                 <img
                   src={"http://127.0.0.1:8000" + Post.file}
                   className="w-3/5 my-4"
