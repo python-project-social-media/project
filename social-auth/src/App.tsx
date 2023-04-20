@@ -15,6 +15,9 @@ import Register from "./pages/Register/Register";
 import PostDetail from "./pages/PostDetail/PostDetail";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import AddPost from "./pages/AddPost/AddPost";
+import Posts from "./pages/Posts/Posts";
+import Profile from "./pages/Profile/Profile";
 
 function App() {
   return (
@@ -40,6 +43,9 @@ function App() {
               <Route path="/home" element={<HomeLoggedIn />} />
               <Route path="/best-of-the-week" element={<BestOfWeek />} />
               <Route path="/post/:id" element={<PostDetail />} />
+              <Route path="/post/add" element={<AddPost />} />
+              <Route path="/post/all" element={<Posts />} />
+              <Route path="/profile/:id" element={<Profile />} />
               <Route element={<AuthProtect />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />

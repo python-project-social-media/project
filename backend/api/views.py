@@ -80,6 +80,30 @@ class App:
             post_data.get('create')/1000)
         return post_data
 
+    #!Get all posts
+    def get_all_posts_helper(self, tx):
+        query = (
+            "MATCH (post:Post) RETURN post,ID(post) ORDER BY post.create DESC"
+        )
+        result = tx.run(query)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def get_all_posts(self):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.get_all_posts_helper)
+            arr = []
+            for i in result:
+                arr.append(self.serialize_post(i))
+            return arr
+
     #!Add profile
     def add_profile_helper(self, tx, username, profile_id):
         query = (
@@ -812,6 +836,15 @@ def Register(request):
 
 
 #! POST CRUD
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
+def GetAllPosts(request):
+    data = app.get_all_posts()
+    app.close()
+    return Response({"data": data}, status=200)
+
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
@@ -823,6 +856,7 @@ def AddPost(request):
         else:
             return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
         upload = request.FILES.get('upload')
+        print(upload)
         if upload != None:
             fss = FileSystemStorage()
             file = fss.save("posts"+"/"+upload.name, upload)
@@ -983,7 +1017,6 @@ def DeleteAnswer(request, comment_id):
 @permission_classes([AllowAny])
 def GetComments(request, post_id):
     data = app.get_posts_comments(post_id)
-    app.close()
     return Response({"data": data}, status=200)
 
 

@@ -2,15 +2,22 @@ import { createContext, useState, useEffect } from "react";
 import jwt_decode from "jwt-decode";
 const AuthContext = createContext({});
 import { useNavigate } from "react-router-dom";
-import PostI from "../interfaces/Post";
+import { Comment as CommentI } from "../interfaces/Comment";
+import { toast } from "react-toastify";
+import { Post as PostI } from "../interfaces/Post";
+import { useLocation } from "react-router-dom";
 
 export default AuthContext;
 
 export const AuthProvider = ({ children }: any) => {
   const [profile, setProfile] = useState();
   const [googleDataState, setGoogleDataState] = useState();
-  const [key, setKey] = useState();
+  const [key, setKey] = useState<string>();
+  const [post, setPost] = useState<PostI | undefined | null>(null);
+  const [posts, setPosts] = useState<PostI[]>();
+  const [comments, setComments] = useState<CommentI[] | undefined>(undefined);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   useEffect(() => {
     if (localStorage.getItem("key")) {
@@ -89,6 +96,38 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const getComments = async (post_id: number) => {
+    await fetch(`http://127.0.0.1:8000/api/post/${post_id}/comments`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (resp: Response) => {
+      if (resp.status == 200) {
+        let data: any = await resp.json();
+        setComments(data.data);
+      }
+    });
+  };
+
+  const deleteComment = async (cid: string, pid: number) => {
+    await fetch(`http://127.0.0.1:8000/api/answer/${cid}/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(async (resp: Response) => {
+      if (resp.status === 200) {
+        let data: any = await resp.json();
+        getComments(pid).then(() => {
+          GetPost(pid);
+          toast.success(data.msg_tr);
+        });
+      }
+    });
+  };
+
   const responseGoogle = async (tokens: {}) => {
     await fetch("http://localhost:8000/api/rest-auth/google/", {
       method: "POST",
@@ -105,6 +144,7 @@ export const AuthProvider = ({ children }: any) => {
         let data: any = await resp.json();
         setKey(data["key"]);
         localStorage.setItem("key", data["key"]);
+        toast.success("Başarıyla giriş yapıldı. 🫡");
       }
     });
   };
@@ -124,6 +164,7 @@ export const AuthProvider = ({ children }: any) => {
         let data: any = await resp.json();
         setKey(data["key"]);
         localStorage.setItem("key", data["key"]);
+        toast.success("Başarıyla giriş yapıldı. 🫡");
       }
     });
   };
@@ -153,6 +194,43 @@ export const AuthProvider = ({ children }: any) => {
       if (resp.status == 200) {
         let data: any = await resp.json();
         navigate("/login");
+        toast.success("Başarıyla kayıt olundu. 👾");
+      }
+    });
+  };
+
+  const getAllPosts = async () => {
+    await fetch("http://127.0.0.1:8000/api/post/all", {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(async (response: Response) => {
+      if (response.status == 200) {
+        let data: { data: PostI[] } = await response.json();
+        setPosts(data.data);
+      }
+    });
+  };
+
+  const deletePost = async (pid: number) => {
+    await fetch(`http://127.0.0.1:8000/api/post/${pid}/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(async (response: Response) => {
+      if (response.status === 200) {
+        let data = await response.json();
+        if (pathname == "/post/all") {
+          getAllPosts().then(() => {
+            toast.success(data.msg_tr);
+          });
+        } else {
+          toast.success(data.msg_tr);
+        }
+        navigate("/post/all");
       }
     });
   };
@@ -170,6 +248,7 @@ export const AuthProvider = ({ children }: any) => {
       localStorage.removeItem("nkey");
       localStorage.removeItem("profile");
       navigate("/");
+      toast.success("Başarıyla çıkış yapıldı. 😇");
     });
   };
 
@@ -191,15 +270,42 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const GetPost = async (pid: number) => {
+    setPost(undefined);
+    await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
+      method: "GET",
+      headers: {
+        "content-type": "application/json",
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      if (resp.status == 200) {
+        if (data.data) {
+          setPost(data.data);
+        }
+      } else if (resp.status == 400) {
+        setPost(null);
+      }
+    });
+  };
+
   let contextData = {
     profile: profile,
+    comments: comments,
+    post: post,
+    posts: posts,
     responseGoogle: responseGoogle,
     addProfile: addProfile,
     logout: logout,
     login: login,
+    getAllPosts: getAllPosts,
     register: register,
     toggleSidebar: toggleSidebar,
     MostLikedPost: MostLikedPost,
+    deletePost: deletePost,
+    getComments: getComments,
+    GetPost: GetPost,
+    deleteComment: deleteComment,
   };
 
   return (

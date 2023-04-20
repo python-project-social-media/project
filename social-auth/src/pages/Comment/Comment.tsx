@@ -1,12 +1,19 @@
 import { Comment as CommentI } from "../../interfaces/Comment";
-import { BsThreeDots } from "react-icons/bs";
-import { AiFillHeart } from "react-icons/ai";
-import { TfiCommentAlt } from "react-icons/tfi";
-function Comment(comment: { comment: CommentI | undefined }) {
-  let Comment = comment.comment;
+import { RiDeleteBin6Fill } from "react-icons/ri";
+import { useContext } from "react";
+import AuthContext from "../../context/context";
+
+function Comment(comment: {
+  comment: CommentI | undefined;
+  pid: number | undefined;
+}) {
+  let Comment: CommentI | undefined = comment?.comment;
+
+  let { profile, deleteComment }: any = useContext(AuthContext);
+
   return (
     <>
-      {comment != undefined ? (
+      {comment.comment != undefined ? (
         <div className="shadow-lg w-full bg-[#e9e9e9] rounded-md max-w-md p-3">
           <div className="p-0">
             <div>
@@ -29,34 +36,30 @@ function Comment(comment: { comment: CommentI | undefined }) {
                   <p className="font-bold scale-110">•</p>
                   <p>4g</p>
                 </div>
-                <BsThreeDots />
+                {Comment?.profile_id == profile.id ? (
+                  <RiDeleteBin6Fill
+                    onClick={() => {
+                      deleteComment(Comment?.id, comment.pid);
+                    }}
+                    className="cursor-pointer text-red-500 hover:text-red-700 duration-200"
+                  />
+                ) : null}
               </div>
               <p className="my-2">{Comment?.text}</p>
             </div>
           </div>
         </div>
       ) : (
-        <div className="shadow-lg bg-[#F6F6F6] rounded-md max-w-md p-3">
+        <div className="shadow-lg bg-[#e9e9e9] rounded-md max-w-md p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="rounded-full w-8 h-8 border font-semibold text-sm grid place-content-center fade-bg"></div>
               <div className="w-28 h-3 rounded-lg fade-bg"></div>
             </div>
-            <BsThreeDots />
           </div>
           <p className="my-2 w-5/6 h-2 rounded-lg fade-bg"></p>
           <p className="my-2 w-5/6 h-2 rounded-lg fade-bg"></p>
           <p className="my-2 w-5/6 h-2 rounded-lg fade-bg"></p>
-          <div className="flex items-center justify-around">
-            <div className="flex items-center gap-1">
-              <TfiCommentAlt className="cursor-pointer" color="gray" />
-              <p className="w-3 h-2 rounded-lg fade-bg"></p>
-            </div>
-            <div className="flex items-center gap-1">
-              <AiFillHeart className="cursor-pointer" color="gray" size={19} />
-              <p className="w-3 h-2 rounded-lg fade-bg"></p>
-            </div>
-          </div>
         </div>
       )}
     </>

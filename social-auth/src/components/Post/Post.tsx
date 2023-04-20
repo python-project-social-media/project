@@ -1,16 +1,17 @@
 import { BsThreeDots } from "react-icons/bs";
 import { AiFillHeart } from "react-icons/ai";
+import { RiDeleteBin5Fill } from "react-icons/ri";
 import { TfiCommentAlt } from "react-icons/tfi";
 import "./Post.css";
+
 import { useState, useContext } from "react";
 import { Post as PostI } from "../../interfaces/Post";
 import { Link } from "react-router-dom";
 import AuthContext from "../../context/context";
 
 function Post(post: { post: PostI | undefined }) {
-  const { profile }: any = useContext(AuthContext);
+  const { profile, deletePost }: any = useContext(AuthContext);
   const [Post, setPost] = useState<PostI | undefined>(post.post);
-  console.log(profile?.id, Post?.profile_id, profile?.id == Post?.profile_id);
 
   const postliketoggle = async () => {
     await fetch(`http://127.0.0.1:8000/api/post/${Post?.id}/toggle`, {
@@ -26,12 +27,15 @@ function Post(post: { post: PostI | undefined }) {
 
   return (
     <>
-      {post.post?.profile_id != undefined ? (
+      {post.post != undefined ? (
         <div className="shadow-lg w-full bg-[#F6F6F6] rounded-md max-w-md p-3">
           <div className="p-0">
-            <Link to={`/post/${Post?.id}`}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
+            <div className="mb-3">
+              <div className="flex items-center justify-between mb-3">
+                <Link
+                  to={`/post/${Post?.id}`}
+                  className="flex items-center gap-2"
+                >
                   {Post?.profile?.profilePhotoUrl ? (
                     <img
                       src={Post?.profile?.profilePhotoUrl}
@@ -46,17 +50,27 @@ function Post(post: { post: PostI | undefined }) {
                   <p>{Post?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
                   <p>4g</p>
-                </div>
-                {profile?.id == Post?.profile_id ? <BsThreeDots /> : null}
+                </Link>
+                {profile?.id == Post?.profile_id ? (
+                  <RiDeleteBin5Fill
+                    color="red"
+                    className="cursor-pointer"
+                    onClick={() => {
+                      deletePost(Post?.id);
+                    }}
+                  />
+                ) : null}
               </div>
-              <p className="my-2">{Post?.text}</p>
-              {Post?.file != "" ? (
-                <img
-                  src={"http://127.0.0.1:8000" + Post.file}
-                  className="w-3/5 my-4"
-                />
-              ) : null}
-            </Link>
+              <Link to={`/post/${Post?.id}`} className="mb-3 block">
+                {Post?.text}
+                {Post?.file != "" ? (
+                  <img
+                    src={"http://127.0.0.1:8000" + Post?.file}
+                    className="w-3/5 my-4"
+                  />
+                ) : null}
+              </Link>
+            </div>
             <div className="flex items-center justify-around">
               <div className="flex items-center gap-1">
                 <TfiCommentAlt className="cursor-pointer" />

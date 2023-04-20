@@ -26,6 +26,7 @@ urlpatterns = [
     # path('profile/<int:mute_id>/mute', views.MuteProfile),
 
     # TODO Post
+    path('post/all', views.GetAllPosts),
     path('post/add', views.AddPost),
     path('post/<int:id>', views.GetPost),
     path('post/<int:id>/delete', views.DeletePost),

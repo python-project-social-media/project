@@ -5,6 +5,7 @@ import { HiBars3BottomRight } from "react-icons/hi2";
 import AuthContext from "../../context/context";
 import Wave from "src/assets/Wave.svg";
 import { useLocation } from "react-router-dom";
+
 function Header() {
   let { profile, logout, toggleSidebar }: any = useContext(AuthContext);
   const { pathname } = useLocation();
@@ -39,7 +40,7 @@ function Header() {
               </Link>
             )}
 
-            <p>En Popülerler</p>
+            <Link to={"/post/all"}>En Popülerler</Link>
             <p>Haberler</p>
             <Link
               to={"/best-of-the-week"}
@@ -98,6 +99,22 @@ function Header() {
                 fillOpacity="0.54"
               />
             </svg>
+          </div>
+          <div className="md:hidden block">
+            {profile ? (
+              <>
+                {profile.profilePhotoUrl ? (
+                  <img
+                    src={profile.profilePhotoUrl}
+                    className="rounded-full select-none w-8 h-8 "
+                  />
+                ) : (
+                  <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                    {profile.user.username.slice(0, 2).toUpperCase()}
+                  </div>
+                )}
+              </>
+            ) : null}
           </div>
           <div className="md:hidden block">
             <HiBars3BottomRight

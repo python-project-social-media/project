@@ -5,3 +5,7 @@ html {
 .Toasty {
   font-size: 12px !important;
 }
+
+.without-header {
+  min-height: calc(100vh - 409px);
+}
