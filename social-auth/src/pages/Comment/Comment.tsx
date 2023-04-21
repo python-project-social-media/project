@@ -2,6 +2,9 @@ import { Comment as CommentI } from "../../interfaces/Comment";
 import { RiDeleteBin6Fill } from "react-icons/ri";
 import { useContext } from "react";
 import AuthContext from "../../context/context";
+import ReactTimeAgo from "react-time-ago";
+import TimeAgo from "javascript-time-ago";
+import tr from "javascript-time-ago/locale/tr";
 
 function Comment(comment: {
   comment: CommentI | undefined;
@@ -10,7 +13,7 @@ function Comment(comment: {
   let Comment: CommentI | undefined = comment?.comment;
 
   let { profile, deleteComment }: any = useContext(AuthContext);
-
+  TimeAgo.addLocale(tr);
   return (
     <>
       {comment.comment != undefined ? (
@@ -34,7 +37,11 @@ function Comment(comment: {
                   )}
                   <p>{Comment?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
-                  <p>4g</p>
+                  <ReactTimeAgo
+                    date={Comment?.create}
+                    locale="tr-TR"
+                    timeStyle={"mini-now"}
+                  />
                 </div>
                 {Comment?.profile_id == profile.id ? (
                   <RiDeleteBin6Fill

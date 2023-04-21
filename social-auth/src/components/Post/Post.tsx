@@ -1,28 +1,40 @@
 import { BsThreeDots } from "react-icons/bs";
-import { AiFillHeart } from "react-icons/ai";
+import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { RiDeleteBin5Fill } from "react-icons/ri";
 import { TfiCommentAlt } from "react-icons/tfi";
 import "./Post.css";
-
+import tr from "javascript-time-ago/locale/tr";
+import TimeAgo from "javascript-time-ago";
 import { useState, useContext } from "react";
 import { Post as PostI } from "../../interfaces/Post";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import AuthContext from "../../context/context";
+import { useLocation } from "react-router-dom";
+import ReactTimeAgo from "react-time-ago";
+import { toast } from "react-toastify";
 
 function Post(post: { post: PostI | undefined }) {
-  const { profile, deletePost }: any = useContext(AuthContext);
+  const { profile, deletePost, isPostDetail }: any = useContext(AuthContext);
   const [Post, setPost] = useState<PostI | undefined>(post.post);
-
+  const [like, setLike] = useState<boolean>(false);
+  const { pathname } = useLocation();
+  const navigate = useNavigate();
+  TimeAgo.addLocale(tr);
   const postliketoggle = async () => {
-    await fetch(`http://127.0.0.1:8000/api/post/${Post?.id}/toggle`, {
-      method: "POST",
-      headers: {
-        Authorization: "Token " + localStorage.getItem("key"),
-      },
-    }).then(async (resp: Response): Promise<void> => {
-      let data = await resp.json();
-      setPost(data.data);
-    });
+    if (localStorage.getItem("key")) {
+      await fetch(`http://127.0.0.1:8000/api/post/${Post?.id}/toggle`, {
+        method: "POST",
+        headers: {
+          Authorization: "Token " + localStorage.getItem("key"),
+        },
+      }).then(async (resp: Response): Promise<void> => {
+        let data = await resp.json();
+        setPost(data.data);
+        setLike(data.like);
+      });
+    } else {
+      toast.info("Bu işlemi yapabilmek için giriş yapmalısınız. 😶");
+    }
   };
 
   return (
@@ -33,7 +45,7 @@ function Post(post: { post: PostI | undefined }) {
             <div className="mb-3">
               <div className="flex items-center justify-between mb-3">
                 <Link
-                  to={`/post/${Post?.id}`}
+                  to={`/profile/${Post?.profile.user.id}`}
                   className="flex items-center gap-2"
                 >
                   {Post?.profile?.profilePhotoUrl ? (
@@ -49,14 +61,22 @@ function Post(post: { post: PostI | undefined }) {
                   )}
                   <p>{Post?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
-                  <p>4g</p>
+                  <ReactTimeAgo
+                    date={Post?.create}
+                    locale="tr-TR"
+                    timeStyle={"mini-now"}
+                  />
                 </Link>
-                {profile?.id == Post?.profile_id ? (
+                {profile?.id == Post?.profile_id &&
+                pathname != "/best-of-the-week" ? (
                   <RiDeleteBin5Fill
                     color="red"
                     className="cursor-pointer"
                     onClick={() => {
                       deletePost(Post?.id);
+                      if (isPostDetail(pathname)) {
+                        navigate("/");
+                      }
                     }}
                   />
                 ) : null}
@@ -77,12 +97,21 @@ function Post(post: { post: PostI | undefined }) {
                 <p>{Post?.comment_count}</p>
               </div>
               <div className="flex items-center gap-1">
-                <AiFillHeart
-                  className="cursor-pointer"
-                  onClick={postliketoggle}
-                  color="red"
-                  size={19}
-                />
+                {like ? (
+                  <AiFillHeart
+                    className="cursor-pointer"
+                    onClick={postliketoggle}
+                    color="red"
+                    size={19}
+                  />
+                ) : (
+                  <AiOutlineHeart
+                    className="cursor-pointer"
+                    onClick={postliketoggle}
+                    color="black"
+                    size={19}
+                  />
+                )}
                 <p>{Post?.like_count}</p>
               </div>
             </div>

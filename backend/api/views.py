@@ -966,11 +966,11 @@ def ToggleLikePost(request, post_id):
     if state == False:
         result = app.like_a_post(post_id, profile.id)
         app.close()
-        return Response({"msg_en": "Successfully liked the post. 😄", "msg_tr": "Gönderi başarıyla beğenildi. 😄", "data": result}, status=200)
+        return Response({"msg_en": "Successfully liked the post. 😄", "msg_tr": "Gönderi başarıyla beğenildi. 😄", "data": result, "like": True}, status=200)
     else:
         result = app.take_back_like_post(post_id, profile.id)
         app.close()
-        return Response({"msg_en": "Successfully took your like back. 😄", "msg_tr": "Beğenin başarıyla geri çekildi. 😄", "data": result}, status=200)
+        return Response({"msg_en": "Successfully took your like back. 😄", "msg_tr": "Beğenin başarıyla geri çekildi. 😄", "data": result, "like": False}, status=200)
 
 
 @api_view(['POST'])
@@ -1085,6 +1085,7 @@ def UpdateProfile(request):
 
 
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def GetProfile(request, id):
     """
@@ -1106,6 +1107,7 @@ def ToogleProfileFollow(request, follow_id):
         Bir profili takip eder/takipten çıkar, takip edilen kişinin idsi follow_id olarak parametre alınır. 
     """
     profile = models.Profile.objects.filter(user=request.user)
+    follow = models.Profile.objects.filter(id=follow_id)
     if len(profile) > 0:
         profile = profile[0]
     else:
@@ -1115,14 +1117,36 @@ def ToogleProfileFollow(request, follow_id):
         follow = follow[0]
     else:
         return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
-    if app.is_following_profile(profile.id, follow.id) == True:
-        app.unfollow_profile(profile.id, follow.id)
-        app.close()
-        return Response({"msg_en": "Successfully unfollowed. 🚀", "msg_tr": "Başarıyla takipten çıkıldı. 🚀"}, status=200)
+    will_be_followed = models.Profile.objects.filter(
+        user=User.objects.get(id=follow_id))
+    will_follow = models.Profile.objects.filter(
+        user=request.user)
+    if len(will_be_followed) == 1 and len(will_follow) == 1:
+        will_be_followed = models.Profile.objects.filter(
+            user=User.objects.get(id=follow_id))[0]
+        will_follow = models.Profile.objects.get(
+            user=request.user)
+
+        if will_follow.user not in will_be_followed.followers.all():
+            will_be_followed.followers.add(will_follow.user.id)
+            will_follow.following.add(will_be_followed.user.id)
+            followed_user = serializers.ProfileSerializer(
+                will_be_followed, many=False)
+
+            app.follow_profile(profile.id, follow.id)
+            app.close()
+            return Response({"msg_tr": "Başarıyla takip edildi. 🚀", "data": followed_user.data}, status=200)
+        else:
+            will_be_followed.followers.remove(will_follow.user.id)
+            will_follow.following.remove(will_be_followed.user.id)
+            followed_user = serializers.ProfileSerializer(
+                will_be_followed, many=False)
+            app.unfollow_profile(profile.id, follow.id)
+            app.close()
+            return Response({"msg_tr": "Başarıyla takipten çıkıldı. 🚀", "data": followed_user.data}, status=200)
+
     else:
-        app.follow_profile(profile.id, follow.id)
-        app.close()
-        return Response({"msg_en": "Successfully followed. 🚀", "msg_tr": "Başarıyla takip edildi. 🚀"}, status=200)
+        return Response({"msg": "Profil bulunamadı. 😒"}, status=404)
 
 
 @api_view(['POST'])

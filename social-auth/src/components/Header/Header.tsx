@@ -35,12 +35,17 @@ function Header() {
                 Anasayfa
               </Link>
             ) : (
-              <Link to={"/"} className="active">
+              <Link to={"/"} className={pathname == "/" ? "active" : ""}>
                 Anasayfa
               </Link>
             )}
 
-            <Link to={"/post/all"}>En Popülerler</Link>
+            <Link
+              to={"/post/all"}
+              className={pathname == "/post/all" ? "active" : ""}
+            >
+              Gönderiler
+            </Link>
             <p>Haberler</p>
             <Link
               to={"/best-of-the-week"}

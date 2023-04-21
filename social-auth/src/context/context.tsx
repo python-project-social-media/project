@@ -68,6 +68,14 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const isPostDetail = (path: string) => {
+    let arr: string[] = path.split("/");
+    if (arr.length == 3 && arr[2].match(/^-?\d+$/)) {
+      return true;
+    }
+    return false;
+  };
+
   const getUserByKey = async (key: string) => {
     await fetch("http://127.0.0.1:8000/api/auth/user/", {
       method: "GET",
@@ -258,18 +266,6 @@ export const AuthProvider = ({ children }: any) => {
     sidebar?.classList.toggle("right-0");
   };
 
-  const MostLikedPost = async () => {
-    await fetch("http://127.0.0.1:8000/api/post/most-liked", {
-      method: "GET",
-      headers: {
-        Authorization: "Token " + localStorage.getItem("key"),
-      },
-    }).then(async (resp: Response) => {
-      let data = await resp.json();
-      return data.data[0];
-    });
-  };
-
   const GetPost = async (pid: number) => {
     setPost(undefined);
     await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
@@ -301,11 +297,11 @@ export const AuthProvider = ({ children }: any) => {
     getAllPosts: getAllPosts,
     register: register,
     toggleSidebar: toggleSidebar,
-    MostLikedPost: MostLikedPost,
     deletePost: deletePost,
     getComments: getComments,
     GetPost: GetPost,
     deleteComment: deleteComment,
+    isPostDetail: isPostDetail,
   };
 
   return (

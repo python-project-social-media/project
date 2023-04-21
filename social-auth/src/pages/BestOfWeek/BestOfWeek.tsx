@@ -7,12 +7,11 @@ import PostI from "../../interfaces/Post";
 function BestOfWeek() {
   const [mostLiked, setMostLiked] = useState<PostI>();
   const [mostCommented, setMostCommented] = useState<PostI>();
-  const { MostLikedPost }: any = useContext(AuthContext);
   useEffect(() => {
     fetch("http://127.0.0.1:8000/api/post/most-liked", {
       method: "GET",
       headers: {
-        Authorization: "Token " + localStorage.getItem("key"),
+        "content-type": "application/json",
       },
     }).then(async (resp: Response) => {
       let data = await resp.json();
@@ -24,7 +23,7 @@ function BestOfWeek() {
     fetch("http://127.0.0.1:8000/api/post/most-commented", {
       method: "GET",
       headers: {
-        Authorization: "Token " + localStorage.getItem("key"),
+        "content-type": "application/json",
       },
     }).then(async (resp: Response) => {
       let data = await resp.json();

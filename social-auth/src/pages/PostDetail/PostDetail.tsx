@@ -1,7 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import Post from "../../components/Post/Post";
-import { Post as PostI } from "../../interfaces/Post";
 import Comment from "../Comment/Comment";
 import { toast } from "react-toastify";
 import AuthContext from "../../context/context";
@@ -14,12 +13,20 @@ function PostDetail() {
   const params = useParams();
 
   const addComment = async () => {
+    if (!text) {
+      toast.info("Yorumunuzu girmediniz. 😒");
+      return;
+    }
     if (text && text?.length < 8) {
-      toast.success("Yorumunuzun uzunluğu minimum 8 olmalı. 🤨");
+      toast.info("Yorumunuzun uzunluğu minimum 8 olmalı. 🤨");
       return;
     }
     if (text && text?.length > 120) {
-      toast.success("Yorumunuzun uzunluğu maksimum 120 olmalı. 😥");
+      toast.info("Yorumunuzun uzunluğu maksimum 120 olmalı. 😥");
+      return;
+    }
+    if (!localStorage.getItem("key")) {
+      toast.info("Bu işlemi yapabilmek için giriş yapmalısınız. 😶");
       return;
     }
     await fetch(`http://127.0.0.1:8000/api/post/${params?.id!}/answer`, {
