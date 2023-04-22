@@ -4,8 +4,8 @@ export interface Post {
   profile: any;
   profile_id: number;
   text: string;
-  create: string;
-  edit: string;
+  create: Date;
+  edit: Date;
   file?: string;
   id: number;
 }

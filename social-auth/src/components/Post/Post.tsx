@@ -5,7 +5,7 @@ import { TfiCommentAlt } from "react-icons/tfi";
 import "./Post.css";
 import tr from "javascript-time-ago/locale/tr";
 import TimeAgo from "javascript-time-ago";
-import { useState, useContext } from "react";
+import { useState, useContext, useEffect } from "react";
 import { Post as PostI } from "../../interfaces/Post";
 import { Link, useNavigate } from "react-router-dom";
 import AuthContext from "../../context/context";
@@ -13,13 +13,18 @@ import { useLocation } from "react-router-dom";
 import ReactTimeAgo from "react-time-ago";
 import { toast } from "react-toastify";
 
-function Post(post: { post: PostI | undefined }) {
+function Post(params: { post: PostI | undefined }) {
   const { profile, deletePost, isPostDetail }: any = useContext(AuthContext);
-  const [Post, setPost] = useState<PostI | undefined>(post.post);
+  const [Post, setPost] = useState<PostI | undefined>(params.post);
   const [like, setLike] = useState<boolean>(false);
   const { pathname } = useLocation();
   const navigate = useNavigate();
   TimeAgo.addLocale(tr);
+
+  useEffect(() => {
+    setPost(params.post);
+  }, [params]);
+
   const postliketoggle = async () => {
     if (localStorage.getItem("key")) {
       await fetch(`http://127.0.0.1:8000/api/post/${Post?.id}/toggle`, {
@@ -39,7 +44,7 @@ function Post(post: { post: PostI | undefined }) {
 
   return (
     <>
-      {post.post != undefined ? (
+      {params.post != undefined ? (
         <div className="shadow-lg w-full bg-[#F6F6F6] rounded-md max-w-md p-3">
           <div className="p-0">
             <div className="mb-3">
@@ -62,7 +67,7 @@ function Post(post: { post: PostI | undefined }) {
                   <p>{Post?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
                   <ReactTimeAgo
-                    date={Post?.create}
+                    date={Post?.create || 0}
                     locale="tr-TR"
                     timeStyle={"mini-now"}
                   />
@@ -72,11 +77,12 @@ function Post(post: { post: PostI | undefined }) {
                   <RiDeleteBin5Fill
                     color="red"
                     className="cursor-pointer"
-                    onClick={() => {
-                      deletePost(Post?.id);
-                      if (isPostDetail(pathname)) {
-                        navigate("/");
-                      }
+                    onClick={async () => {
+                      await deletePost(Post?.id).then(() => {
+                        if (isPostDetail(pathname)) {
+                          navigate("/posts");
+                        }
+                      });
                     }}
                   />
                 ) : null}

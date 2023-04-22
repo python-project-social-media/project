@@ -57,17 +57,18 @@ function Header() {
           <div className="auth-settings hidden md:flex items-center gap-4">
             {profile ? (
               <>
-                {profile.profilePhotoUrl ? (
-                  <img
-                    src={profile.profilePhotoUrl}
-                    className="rounded-full select-none w-8 h-8 "
-                  />
-                ) : (
-                  <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
-                    {profile.user.username.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
-
+                <Link to={`/profile/${profile?.user?.id}`}>
+                  {profile.profilePhotoUrl ? (
+                    <img
+                      src={profile.profilePhotoUrl}
+                      className="rounded-full select-none w-8 h-8 "
+                    />
+                  ) : (
+                    <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                      {profile.user.username.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </Link>
                 <button
                   onClick={logout}
                   className="register-button hover:shadow-md duration-200 text-sm"
@@ -108,16 +109,18 @@ function Header() {
           <div className="md:hidden block">
             {profile ? (
               <>
-                {profile.profilePhotoUrl ? (
-                  <img
-                    src={profile.profilePhotoUrl}
-                    className="rounded-full select-none w-8 h-8 "
-                  />
-                ) : (
-                  <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
-                    {profile.user.username.slice(0, 2).toUpperCase()}
-                  </div>
-                )}
+                <Link to={`/profile/${profile?.user?.id}`}>
+                  {profile.profilePhotoUrl ? (
+                    <img
+                      src={profile.profilePhotoUrl}
+                      className="rounded-full select-none w-8 h-8 "
+                    />
+                  ) : (
+                    <div className="rounded-full select-none w-8 h-8 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                      {profile.user.username.slice(0, 2).toUpperCase()}
+                    </div>
+                  )}
+                </Link>
               </>
             ) : null}
           </div>

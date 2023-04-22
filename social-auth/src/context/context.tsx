@@ -212,6 +212,7 @@ export const AuthProvider = ({ children }: any) => {
       method: "GET",
       headers: {
         "Content-Type": "application/json",
+        Authorization: "Token " + localStorage.getItem("key"),
       },
     }).then(async (response: Response) => {
       if (response.status == 200) {
@@ -267,7 +268,6 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const GetPost = async (pid: number) => {
-    setPost(undefined);
     await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
       method: "GET",
       headers: {

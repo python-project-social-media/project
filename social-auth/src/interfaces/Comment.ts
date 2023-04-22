@@ -1,7 +1,7 @@
 export interface Comment {
   id: string;
   profile_id: number;
-  create: number;
+  create: Date;
   text: string;
   profile: Profile;
 }

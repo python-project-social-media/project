@@ -60,6 +60,19 @@ class App:
             post_data.get('create')/1000)
         return post_data
 
+    def serialize_post_2(self, result, id):
+        post_data = result
+        profile = get_object_or_404(models.Profile, id=post_data['profile_id'])
+        if id != None:
+            post_data['id'] = id
+            post_data['profile'] = serializers.ProfileSerializer(
+                profile, many=False).data
+            post_data['edit'] = datetime.datetime.fromtimestamp(
+                post_data.get('edit')/1000)
+            post_data['create'] = datetime.datetime.fromtimestamp(
+                post_data.get('create')/1000)
+        return post_data
+
     def serialize_news(self, result):
         post_data = result.get('news')
         profile = get_object_or_404(models.Profile, id=post_data['profile_id'])
@@ -81,11 +94,14 @@ class App:
         return post_data
 
     #!Get all posts
-    def get_all_posts_helper(self, tx):
+    def get_all_posts_helper(self, tx, profile_id):
         query = (
-            "MATCH (post:Post) RETURN post,ID(post) ORDER BY post.create DESC"
+            "MATCH(profile: Profile {profile_id: $profile_id}) - [:Following] -> (followed: Profile) "
+            "MATCH(followed) - [:Posted] -> (post: Post) "
+            "RETURN post, ID(post)"
         )
-        result = tx.run(query)
+
+        result = tx.run(query, profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -95,16 +111,46 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def get_all_posts(self):
+    def get_all_posts(self, profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.get_all_posts_helper)
+                self.get_all_posts_helper, profile_id)
             arr = []
             for i in result:
-                arr.append(self.serialize_post(i))
+                data = self.serialize_post(i)
+                arr.append(data)
+
+            return arr
+
+    #!Get my posts
+    def get_my_posts_helper(self, tx, profile_id):
+        query = (
+            "MATCH (post:Post {profile_id:$profile_id}) "
+            "RETURN post,ID(post)"
+        )
+        result = tx.run(query, profile_id=profile_id)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def get_my_posts(self, profile_id):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.get_my_posts_helper, profile_id)
+            arr = []
+            for i in result:
+                data = self.serialize_post(i)
+                arr.append(data)
+
             return arr
 
     #!Add profile
+
     def add_profile_helper(self, tx, username, profile_id):
         query = (
             "CREATE (profile:Profile {profile_id:$profile_id, username:$username, followers_count:0, following_count:0}) RETURN profile"
@@ -234,7 +280,9 @@ class App:
         query = (
             "MATCH (post:Post) "
             "WHERE ID(post)=$id "
-            "DETACH DELETE post"
+            "MATCH (comment:Comment) -[:Answered]-> (post) "
+            "DETACH DELETE comment "
+            "DELETE post "
         )
         result = tx.run(query, id=id)
 
@@ -838,11 +886,28 @@ def Register(request):
 #! POST CRUD
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def GetAllPosts(request):
-    data = app.get_all_posts()
-    app.close()
-    return Response({"data": data}, status=200)
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile) > 0:
+        profile = profile[0]
+    else:
+        return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+    try:
+        data = app.get_all_posts(profile.id)
+        data1 = app.get_my_posts(profile.id)
+        arr = data + data1
+        res = []
+        for i in arr:
+            if i not in res:
+                res.append(i)
+        newlist = sorted(res, key=lambda d: d['create'], reverse=True)
+
+        app.close()
+        return Response({"data": newlist}, status=200)
+    except Exception as e:
+        print(e)
+        return Response({"msg_tr": "Veriler çekilirken bir hata oluştu. 😢", "msg_en": "An error occured. 😢"}, status=500)
 
 
 @api_view(['POST'])
@@ -890,9 +955,12 @@ def DeletePost(request, id):
     if post == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
     if request.user.id == post.get('profile').get('user').get('id'):
-        result = app.delete_post(id=id)
-        app.close()
-        return Response({"msg_en": "Successfully deleted the post. 👽", "msg_tr": "Gönderi başarıyla silindi. 👽"}, status=200)
+        try:
+            app.delete_post(id=id)
+            app.close()
+            return Response({"msg_en": "Successfully deleted the post. 👽", "msg_tr": "Gönderi başarıyla silindi. 👽"}, status=200)
+        except:
+            return Response({"msg_en": "An error occured while deleting. 😢", "msg_tr": "Silerken bir hata oluştu. 😢"}, status=500)
     else:
         return Response({"msg_en": "Users dont match. 😒", "msg_tr": "Kullanıcı uyuşmuyor. 😒"}, status=400)
 

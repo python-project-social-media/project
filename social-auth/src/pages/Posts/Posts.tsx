@@ -8,6 +8,7 @@ function Posts() {
   const { posts, getAllPosts }: any = useContext(AuthContext);
   useEffect(() => {
     getAllPosts();
+    console.log(posts);
   }, []);
 
   return (
@@ -15,26 +16,28 @@ function Posts() {
       <Link to={"/post/add"} key={1}>
         Gönderi Ekle
       </Link>
-      {posts ? (
-        posts?.map((post: PostI) => {
+      {posts && posts.length > 0 ? (
+        posts.map((post: PostI) => {
           return (
             <div className="my-3 w-full">
               <Post post={post} key={post.id} />
             </div>
           );
         })
-      ) : (
-        <div className="lg:w-[55vw] w-[90vw]">
-          <div className="w-full my-3">
+      ) : posts == undefined ? (
+        <div className="mesi">
+          <div className="my-3">
             <Post post={undefined} />
           </div>
-          <div className="w-full my-3">
+          <div className="my-3">
             <Post post={undefined} />
           </div>
-          <div className="w-full my-3">
+          <div className="my-3">
             <Post post={undefined} />
           </div>
         </div>
+      ) : (
+        <h3 className="font-semibold text-xl">Gönderi yok. 😢</h3>
       )}
     </div>
   );

@@ -23,7 +23,7 @@ function Profile() {
 
   useEffect(() => {
     getProfile();
-  }, []);
+  }, [params]);
 
   const toggleFollow = async (pid: number) => {
     await fetch(`http://127.0.0.1:8000/api/profile/${pid}/follow`, {
@@ -39,9 +39,7 @@ function Profile() {
     });
   };
 
-  useEffect(() => {
-    console.log(profileCurr);
-  }, [profileCurr]);
+  useEffect(() => {}, [profileCurr]);
 
   return (
     <div className="mt-5 without-header px-4 lg:px-16">

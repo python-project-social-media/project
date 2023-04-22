@@ -38,7 +38,7 @@ function Comment(comment: {
                   <p>{Comment?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
                   <ReactTimeAgo
-                    date={Comment?.create}
+                    date={Comment?.create || 0}
                     locale="tr-TR"
                     timeStyle={"mini-now"}
                   />

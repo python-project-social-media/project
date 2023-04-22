@@ -55,7 +55,7 @@ function PostDetail() {
   useEffect(() => {
     GetPost(params.id!);
     getComments(params.id);
-  }, []);
+  }, [params]);
 
   return (
     <>

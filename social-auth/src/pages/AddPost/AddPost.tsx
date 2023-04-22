@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { CiCircleRemove } from "react-icons/ci";
+import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 
 function AddPost() {
@@ -12,6 +13,8 @@ function AddPost() {
       file.click();
     }
   };
+
+  const navigate = useNavigate();
 
   const addPost = async () => {
     let formData: FormData = new FormData();
@@ -29,6 +32,7 @@ function AddPost() {
       console.log(response);
       if (response.status === 200) {
         toast.success("Gönderiniz başarıyla oluşturuldu. ✨");
+        navigate("/post/all");
       }
     });
   };
