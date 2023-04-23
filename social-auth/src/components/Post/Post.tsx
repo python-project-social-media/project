@@ -22,6 +22,7 @@ function Post(params: { post: PostI | undefined }) {
   TimeAgo.addLocale(tr);
 
   useEffect(() => {
+    setPost(undefined);
     setPost(params.post);
   }, [params]);
 
@@ -45,7 +46,7 @@ function Post(params: { post: PostI | undefined }) {
   return (
     <>
       {params.post != undefined ? (
-        <div className="shadow-lg w-full bg-[#F6F6F6] rounded-md max-w-md p-3">
+        <div className="shadow-lg hover:shadow-xl duration-300 w-full bg-[#F6F6F6] rounded-md max-w-md p-3">
           <div className="p-0">
             <div className="mb-3">
               <div className="flex items-center justify-between mb-3">
@@ -89,11 +90,42 @@ function Post(params: { post: PostI | undefined }) {
               </div>
               <Link to={`/post/${Post?.id}`} className="mb-3 block">
                 {Post?.text}
-                {Post?.file != "" ? (
+                {(Post?.file != "" &&
+                  Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                    "png") ||
+                Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                  "jpg" ||
+                Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                  "jpeg" ||
+                Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                  "gif" ? (
                   <img
                     src={"http://127.0.0.1:8000" + Post?.file}
                     className="w-3/5 my-4"
                   />
+                ) : (Post?.file != "" &&
+                    Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                      "mp4") ||
+                  Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                    "avi" ||
+                  Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
+                    "ogg" ? (
+                  <>
+                    <video className="w-3/5 my-4" controls>
+                      <source
+                        src={"http://127.0.0.1:8000" + Post?.file}
+                        type="video/mp4"
+                      />
+                      <source
+                        src={"http://127.0.0.1:8000" + Post?.file}
+                        type="video/ogg"
+                      />
+                      <source
+                        src={"http://127.0.0.1:8000" + Post?.file}
+                        type="video/avi"
+                      />
+                    </video>{" "}
+                  </>
                 ) : null}
               </Link>
             </div>
@@ -103,7 +135,7 @@ function Post(params: { post: PostI | undefined }) {
                 <p>{Post?.comment_count}</p>
               </div>
               <div className="flex items-center gap-1">
-                {like ? (
+                {like || Post?.liked ? (
                   <AiFillHeart
                     className="cursor-pointer"
                     onClick={postliketoggle}

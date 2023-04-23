@@ -6,6 +6,7 @@ export interface Post {
   text: string;
   create: Date;
   edit: Date;
+  liked: boolean;
   file?: string;
   id: number;
 }

@@ -8,7 +8,6 @@ function Posts() {
   const { posts, getAllPosts }: any = useContext(AuthContext);
   useEffect(() => {
     getAllPosts();
-    console.log(posts);
   }, []);
 
   return (

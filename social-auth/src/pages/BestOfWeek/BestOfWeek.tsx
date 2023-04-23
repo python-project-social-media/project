@@ -8,29 +8,55 @@ function BestOfWeek() {
   const [mostLiked, setMostLiked] = useState<PostI>();
   const [mostCommented, setMostCommented] = useState<PostI>();
   useEffect(() => {
-    fetch("http://127.0.0.1:8000/api/post/most-liked", {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-      },
-    }).then(async (resp: Response) => {
-      let data = await resp.json();
-      if (data.data) {
-        setMostLiked(data.data[0]);
-      }
-    });
-
-    fetch("http://127.0.0.1:8000/api/post/most-commented", {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-      },
-    }).then(async (resp: Response) => {
-      let data = await resp.json();
-      if (data.data) {
-        setMostCommented(data.data[0]);
-      }
-    });
+    if (localStorage.getItem("key")) {
+      fetch("http://127.0.0.1:8000/api/post/most-commented", {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+          Authorization: "Token " + localStorage.getItem("key"),
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (data.data) {
+          setMostCommented(data.data[0]);
+        }
+      });
+      fetch("http://127.0.0.1:8000/api/post/most-liked", {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+          Authorization: "Token " + localStorage.getItem("key"),
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (data.data) {
+          setMostLiked(data.data[0]);
+        }
+      });
+    } else {
+      fetch("http://127.0.0.1:8000/api/post/most-commented", {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (data.data) {
+          setMostCommented(data.data[0]);
+        }
+      });
+      fetch("http://127.0.0.1:8000/api/post/most-liked", {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (data.data) {
+          setMostLiked(data.data[0]);
+        }
+      });
+    }
   }, []);
   return (
     <div className="lg:px-16 px-8">

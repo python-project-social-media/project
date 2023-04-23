@@ -25,23 +25,36 @@ function Sidebar() {
       </div>
       <div className="flex flex-col items-end text-lg font-semibold text-[#37902F] gap-6 mt-5">
         {profile ? (
-          <Link to={"/home"} className={pathname == "/home" ? "active" : ""}>
+          <Link
+            to={"/home"}
+            className={pathname == "/home" ? "active" : ""}
+            onClick={toggleSidebar}
+          >
             Anasayfa
           </Link>
         ) : (
-          <Link to={"/"} className={pathname == "/" ? "active" : ""}>
+          <Link
+            to={"/"}
+            className={pathname == "/" ? "active" : ""}
+            onClick={toggleSidebar}
+          >
             Anasayfa
           </Link>
         )}
-        <Link to={"/"} className="w-fit">
-          En Popülerler
+        <Link
+          to={"/post/all"}
+          className={pathname == "/post/all" ? "active w-fit" : "w-fit"}
+          onClick={toggleSidebar}
+        >
+          Gönderiler
         </Link>
-        <Link to={"/"} className="w-fit">
+        <Link to={"/"} className="w-fit" onClick={toggleSidebar}>
           Haberler
         </Link>
         <Link
           to={"/best-of-the-week"}
           className={pathname == "/best-of-the-week" ? "active w-fit" : "w-fit"}
+          onClick={toggleSidebar}
         >
           Haftanın Enleri
         </Link>
@@ -53,7 +66,7 @@ function Sidebar() {
             Çıkış Yap
           </div>
         ) : (
-          <Link to={"/login"}>
+          <Link to={"/login"} onClick={toggleSidebar}>
             <div className="text-sm font-normal register-button px-4">
               Giriş Yap
             </div>

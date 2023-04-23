@@ -96,9 +96,10 @@ class App:
     #!Get all posts
     def get_all_posts_helper(self, tx, profile_id):
         query = (
-            "MATCH(profile: Profile {profile_id: $profile_id}) - [:Following] -> (followed: Profile) "
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "MATCH( (profile) - [:Following] -> (followed: Profile) ) "
             "MATCH(followed) - [:Posted] -> (post: Post) "
-            "RETURN post, ID(post)"
+            "RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
         )
 
         result = tx.run(query, profile_id=profile_id)
@@ -118,6 +119,7 @@ class App:
             arr = []
             for i in result:
                 data = self.serialize_post(i)
+                data['liked'] = i.get('EXISTS( (profile) -[:Liked]-> (post) )')
                 arr.append(data)
 
             return arr
@@ -126,7 +128,8 @@ class App:
     def get_my_posts_helper(self, tx, profile_id):
         query = (
             "MATCH (post:Post {profile_id:$profile_id}) "
-            "RETURN post,ID(post)"
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "RETURN post,ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
         )
         result = tx.run(query, profile_id=profile_id)
 
@@ -144,7 +147,9 @@ class App:
                 self.get_my_posts_helper, profile_id)
             arr = []
             for i in result:
+                print(i)
                 data = self.serialize_post(i)
+                data['liked'] = i.get('EXISTS( (profile) -[:Liked]-> (post) )')
                 arr.append(data)
 
             return arr
@@ -253,7 +258,6 @@ class App:
             return result
 
     #!Add post
-
     def add_post_helper(self, tx, file, text, profile_id):
         query = (
             "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post,ID(post)"
@@ -275,15 +279,41 @@ class App:
             output = self.serialize_post(result[0])
             return output
 
+    #!Delete posts comments
+    def delete_comments_helper(self, tx, id):
+        query = (
+            "MATCH(post: Post) "
+            "WHERE ID(post)="+str(id)+" "
+            "MATCH(comment: Comment) - [:Answered] -> (post) "
+            "DETACH DELETE comment"
+        )
+
+        result = tx.run(query, id=id)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def delete_comments(self, id):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.delete_comments_helper, id)
+            return result
+
     #!Delete post
+
     def delete_post_helper(self, tx, id):
         query = (
-            "MATCH (post:Post) "
-            "WHERE ID(post)=$id "
-            "MATCH (comment:Comment) -[:Answered]-> (post) "
-            "DETACH DELETE comment "
-            "DELETE post "
+            "MATCH(post: Post) "
+            "WHERE ID(post)="+str(id)+" "
+            "DETACH DELETE post"
         )
+
         result = tx.run(query, id=id)
 
         try:
@@ -382,11 +412,13 @@ class App:
             return arr
 
     #!Get the post that got most likes
-    def most_liked_post_helper(self, tx):
+    def most_liked_post_helper(self, tx, profile_id):
         query = (
-            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post,ID(post) ORDER BY post.like_count DESC LIMIT 1"
+            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 "
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "RETURN post,ID(post),EXISTS( (profile) -[:Liked]-> (post) ) ORDER BY post.like_count DESC LIMIT 1"
         )
-        result = tx.run(query)
+        result = tx.run(query, profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -396,23 +428,27 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def most_liked_post(self):
+    def most_liked_post(self, profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.most_liked_post_helper)
+                self.most_liked_post_helper, profile_id=profile_id)
             if result == []:
                 return "E"
             arr = []
             for i in result:
-                arr.append(self.serialize_post(i))
+                data = self.serialize_post(i)
+                data['liked'] = i.get('EXISTS( (profile) -[:Liked]-> (post) )')
+                arr.append(data)
             return arr
 
     #!Most commented post
-    def most_commented_post_helper(self, tx):
+    def most_commented_post_helper(self, tx, profile_id):
         query = (
-            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 RETURN post,ID(post) ORDER BY post.comment_count DESC LIMIT 1"
+            "MATCH (post:Post) WHERE post.create > TIMESTAMP()-604800000 "
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "RETURN post,ID(post),EXISTS( (profile) -[:Liked]-> (post) ) ORDER BY post.comment_count DESC LIMIT 1"
         )
-        result = tx.run(query)
+        result = tx.run(query, profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -422,15 +458,17 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def most_commented_post(self):
+    def most_commented_post(self, profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.most_commented_post_helper)
+                self.most_commented_post_helper, profile_id=profile_id)
             if result == []:
                 return "E"
             arr = []
             for i in result:
-                arr.append(self.serialize_post(i))
+                data = self.serialize_post(i)
+                data['liked'] = i.get('EXISTS( (profile) -[:Liked]-> (post) )')
+                arr.append(data)
             return arr
 
     #!Get posts comments
@@ -956,6 +994,7 @@ def DeletePost(request, id):
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
     if request.user.id == post.get('profile').get('user').get('id'):
         try:
+            app.delete_comments(id=id)
             app.delete_post(id=id)
             app.close()
             return Response({"msg_en": "Successfully deleted the post. 👽", "msg_tr": "Gönderi başarıyla silindi. 👽"}, status=200)
@@ -1004,20 +1043,53 @@ def FilterPostText(request):
 
 
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def MostLikedPost(request):
-    result = app.most_liked_post()
-    if result == "E":
-        return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+    try:
+        if not request.user.is_anonymous:
+            profile = models.Profile.objects.filter(user=request.user)
+            if len(profile) > 0:
+                profile = profile[0]
+            else:
+                return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+            result = app.most_liked_post(profile_id=profile.id)
+            if result == "E":
+                return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+        else:
+            result = app.most_liked_post(profile_id=1)
+            if result == "E":
+                return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+    except Exception as e:
+        print(e)
+        return Response({"msg_en": "An error occured 🤨", "msg_tr": "Bir hata oluştu. 🤨"}, status=500)
+
     return Response({"data": result}, status=200)
 
 
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def MostCommentedPost(request):
-    result = app.most_commented_post()
-    if result == "E":
-        return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+    try:
+        if not request.user.is_anonymous:
+            profile = models.Profile.objects.filter(user=request.user)
+            print(profile)
+            if len(profile) > 0:
+                profile = profile[0]
+            else:
+                return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+            result = app.most_commented_post(profile_id=profile.id)
+            if result == "E":
+                return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+        else:
+            result = app.most_commented_post(profile_id=1)
+            if result == "E":
+                return Response({"msg_en": "There is no data 🤨", "msg_tr": "Veri yok. 🤨"}, status=200)
+    except Exception as e:
+        print(e)
+        return Response({"msg_en": "An error occured 🤨", "msg_tr": "Bir hata oluştu. 🤨"}, status=500)
+
     return Response({"data": result}, status=200)
 
 
@@ -1030,6 +1102,7 @@ def ToggleLikePost(request, post_id):
         profile = profile[0]
     else:
         return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+
     state = app.check_if_liked_post(post_id, profile.id)
     if state == False:
         result = app.like_a_post(post_id, profile.id)
