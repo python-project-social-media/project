@@ -3,6 +3,7 @@ import { Post as PostI } from "../../interfaces/Post";
 import Post from "../../components/Post/Post";
 import AuthContext from "../../context/context";
 import { Link } from "react-router-dom";
+import { BiMessageSquareAdd } from "react-icons/bi";
 
 function Posts() {
   const { posts, getAllPosts }: any = useContext(AuthContext);
@@ -12,8 +13,12 @@ function Posts() {
 
   return (
     <div className="grid place-content-center my-5 without-header lg:px-16 px-4">
-      <Link to={"/post/add"} key={1}>
+      <Link
+        to={"/post/add"}
+        className="bg-gradient-to-br font-semibold flex items-center justify-between from-stone-100/50 to-stone-200/50 text-[#37902f] border border-stone-200 rounded-lg p-1"
+      >
         Gönderi Ekle
+        <BiMessageSquareAdd size={20} />
       </Link>
       {posts && posts.length > 0 ? (
         posts.map((post: PostI) => {

@@ -18,6 +18,8 @@ import "react-toastify/dist/ReactToastify.css";
 import AddPost from "./pages/AddPost/AddPost";
 import Posts from "./pages/Posts/Posts";
 import Profile from "./pages/Profile/Profile";
+import News from "./pages/News/News";
+import AddNews from "./pages/AddNews/AddNews";
 
 function App() {
   return (
@@ -44,8 +46,10 @@ function App() {
               <Route path="/best-of-the-week" element={<BestOfWeek />} />
               <Route path="/post/:id" element={<PostDetail />} />
               <Route path="/post/add" element={<AddPost />} />
+              <Route path="/news/add" element={<AddNews />} />
               <Route path="/post/all" element={<Posts />} />
               <Route path="/profile/:id" element={<Profile />} />
+              <Route path="/news" element={<News />} />
               <Route element={<AuthProtect />}>
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />

@@ -20,8 +20,6 @@ function AddPost() {
     let formData: FormData = new FormData();
     formData.append("text", text);
     formData.append("upload", file!);
-    console.log(formData.get("file"));
-    console.log(formData.get("text"));
     await fetch("http://127.0.0.1:8000/api/post/add", {
       method: "POST",
       headers: {
@@ -29,7 +27,6 @@ function AddPost() {
       },
       body: formData,
     }).then(async (response: Response) => {
-      console.log(response);
       if (response.status === 200) {
         toast.success("Gönderiniz başarıyla oluşturuldu. ✨");
         navigate("/post/all");
@@ -41,7 +38,7 @@ function AddPost() {
   formData;
 
   return (
-    <div className="lg:px-10 px-4">
+    <div className="lg:px-10 px-4 without-header">
       <div className="grid place-items-center mt-10">
         <textarea
           onChange={(e) => {

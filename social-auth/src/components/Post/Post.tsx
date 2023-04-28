@@ -17,8 +17,9 @@ function Post(params: { post: PostI | undefined }) {
   const { profile, deletePost, isPostDetail }: any = useContext(AuthContext);
   const [Post, setPost] = useState<PostI | undefined>(params.post);
   const [like, setLike] = useState<boolean>(false);
-  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
   TimeAgo.addLocale(tr);
 
   useEffect(() => {
@@ -46,7 +47,9 @@ function Post(params: { post: PostI | undefined }) {
   return (
     <>
       {params.post != undefined ? (
-        <div className="shadow-lg hover:shadow-xl duration-300 w-full bg-[#F6F6F6] rounded-md max-w-md p-3">
+        <div
+          className={`shadow-lg hover:shadow-xl duration-300 w-full bg-[#F6F6F6]/50 max-w-md rounded-md p-3`}
+        >
           <div className="p-0">
             <div className="mb-3">
               <div className="flex items-center justify-between mb-3">
@@ -156,7 +159,11 @@ function Post(params: { post: PostI | undefined }) {
           </div>
         </div>
       ) : (
-        <div className="shadow-lg bg-[#F6F6F6] rounded-md max-w-md p-3">
+        <div
+          className={`shadow-lg bg-[#F6F6F6] rounded-md max-w-md p-3 ${
+            pathname == "/post/all" ? "min-w-[400px]" : null
+          } `}
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="rounded-full w-8 h-8 border font-semibold text-sm grid place-content-center fade-bg"></div>

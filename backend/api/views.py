@@ -82,6 +82,7 @@ class App:
             post_data.get('edit')/1000)
         post_data['create'] = datetime.datetime.fromtimestamp(
             post_data.get('create')/1000)
+        post_data['id'] = result.get('ID(news)')
         return post_data
 
     def serialize_comment(self, result):
@@ -332,13 +333,14 @@ class App:
             return result
 
     #!Get post
-    def get_post_helper(self, tx, id):
+    def get_post_helper(self, tx, id, profile_id):
         query = (
             "MATCH (post:Post) "
             "WHERE ID(post)=$id "
-            "RETURN post,ID(post)"
+            "MATCH (profile:Profile {profile_id:$profile_id}) "
+            "RETURN post,ID(post),EXISTS( (profile) -[:Liked]-> (post) )"
         )
-        result = tx.run(query, id=id)
+        result = tx.run(query, id=id, profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -348,14 +350,17 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def get_post(self, id):
+    def get_post(self, id, profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.get_post_helper, id=id)
+                self.get_post_helper, id=id, profile_id=profile_id)
             if result == []:
                 return "E"
-            output = self.serialize_post(result[0])
-            return output
+            print(result)
+            data = self.serialize_post(result[0])
+            data['liked'] = result[0].get(
+                'EXISTS( (profile) -[:Liked]-> (post) )')
+            return data
 
     #!Update post
     def update_post_helper(self, tx, file, id, text, delete):
@@ -607,7 +612,35 @@ class App:
             output = (self.serialize_news(result[0]))
             return output
 
+    #!Get all news
+    def get_all_news_helper(self, tx):
+        query = (
+            "MATCH (news:News) RETURN news,ID(news) ORDER BY news.create DESC"
+        )
+        result = tx.run(query)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def get_all_news(self):
+        with self.driver.session(database="neo4j") as session:
+            # Write transactions allow the driver to handle retries and transient errors
+            result = session.execute_write(
+                self.get_all_news_helper)
+            if len(result) == 0:
+                return "E"
+            arr = []
+            for i in result:
+                arr.append(self.serialize_news(i))
+            return arr
+
     #!Get a news
+
     def get_news_helper(self, tx, id):
         query = (
             "MATCH (news:News) WHERE ID(news)=$id RETURN news,ID(news)"
@@ -976,9 +1009,19 @@ def AddPost(request):
 
 
 @api_view(['GET'])
+@authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def GetPost(request, id):
-    result = app.get_post(id=id)
+    if request.user:
+        print(request.user)
+        profile = models.Profile.objects.filter(user=request.user)
+        if len(profile) > 0:
+            profile = profile[0]
+        else:
+            return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+        result = app.get_post(id=id, profile_id=profile.id)
+    else:
+        result = app.get_post(id=id, profile_id=0)
     app.close()
     if result == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
@@ -1317,6 +1360,16 @@ def MuteProfile(request, mute_id):
 
 
 #! NEWS CRUD
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def GetAllNews(request):
+    """Bütün haberlerin getirilmesini sağlar."""
+    result = app.get_all_news()
+    if result == "E":
+        return Response({"msg_en": "Couldnt find the news. 😶", "msg_tr": "Haber bulunamadı. 😶"}, status=400)
+    return Response({"data": result}, status=200)
+
+
 @api_view(['POST'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAdminUser])

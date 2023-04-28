@@ -46,7 +46,9 @@ function Header() {
             >
               Gönderiler
             </Link>
-            <p>Haberler</p>
+            <Link to={"/news"} className={pathname == "/news" ? "active" : ""}>
+              Haberler
+            </Link>
             <Link
               to={"/best-of-the-week"}
               className={pathname == "/best-of-the-week" ? "active" : ""}

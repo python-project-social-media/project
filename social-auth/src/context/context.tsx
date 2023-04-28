@@ -272,6 +272,7 @@ export const AuthProvider = ({ children }: any) => {
       method: "GET",
       headers: {
         "content-type": "application/json",
+        Authorization: "Token " + localStorage.getItem("key"),
       },
     }).then(async (resp: Response) => {
       let data = await resp.json();
