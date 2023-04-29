@@ -65,7 +65,9 @@ function BestOfWeek() {
           <span className="en">En</span>
           <span className="en-rest ml-[0.3rem]">çok beğenilen gönderi</span>
         </h3>
-        <Post post={mostLiked} key={mostLiked?.id} />
+        <div className="max-w-[400px]">
+          <Post post={mostLiked} key={mostLiked?.id} />
+        </div>
       </div>
       <div className="flex justify-end flex-1">
         <div className="max-w-[300x]">
@@ -73,7 +75,9 @@ function BestOfWeek() {
             <span className="en">En</span>
             <span className="en-rest ml-[0.3rem]">çok yorum alan gönderi</span>
           </h3>
-          <Post post={mostCommented} key={mostCommented?.id} />
+          <div className="min-w-[400px]">
+            <Post post={mostCommented} key={mostCommented?.id} />
+          </div>
         </div>
       </div>
     </div>

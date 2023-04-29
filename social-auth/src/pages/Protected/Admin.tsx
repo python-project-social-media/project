@@ -2,10 +2,14 @@ import React, { useContext } from "react";
 import AuthContext from "../../context/context";
 import { Navigate, Outlet } from "react-router-dom";
 
-const LoggedIn = () => {
+const Admin = () => {
   let { profile }: any = useContext(AuthContext);
 
-  return profile ? <Outlet /> : <Navigate to="/" />;
+  return profile && profile.user.is_superuser ? (
+    <Outlet />
+  ) : (
+    <Navigate to="/" />
+  );
 };
 
-export default LoggedIn;
+export default Admin;

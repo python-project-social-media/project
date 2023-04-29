@@ -44,14 +44,14 @@ function AddPost() {
           onChange={(e) => {
             setText(e.target.value);
           }}
-          className="bg-[#EFEFEF] p-2 lg:w-2/5 w-4/5 outline-none border border-[#D9D9D9] shadow-md hover:shadow-lg duration-200 rounded-xl"
+          className="bg-[#EFEFEF]/50 p-2 lg:w-2/5 w-4/5 outline-none border border-[#D9D9D9] shadow-md hover:shadow-lg duration-200 rounded-xl"
           rows={3}
           placeholder="Anlatmak istedikleriniz... 🤨"
         ></textarea>
         <div className="lg:w-2/5 w-4/5 mt-1 text-sm italic">
           {text?.length}/180
         </div>
-        <div className="lg:w-2/5 mt-2 w-4/5 bg-[#EFEFEF] p-1 border border-[#D9D9D9] shadow-md hover:shadow-lg duration-200 rounded-lg">
+        <div className="lg:w-2/5 mt-2 w-4/5 bg-[#EFEFEF]/50 p-1 border border-[#D9D9D9] shadow-md hover:shadow-lg duration-200 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div

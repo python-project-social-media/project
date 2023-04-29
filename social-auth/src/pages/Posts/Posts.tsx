@@ -6,20 +6,22 @@ import { Link } from "react-router-dom";
 import { BiMessageSquareAdd } from "react-icons/bi";
 
 function Posts() {
-  const { posts, getAllPosts }: any = useContext(AuthContext);
+  const { posts, getAllPosts, profile }: any = useContext(AuthContext);
   useEffect(() => {
     getAllPosts();
   }, []);
 
   return (
     <div className="grid place-content-center my-5 without-header lg:px-16 px-4">
-      <Link
-        to={"/post/add"}
-        className="bg-gradient-to-br font-semibold flex items-center justify-between from-stone-100/50 to-stone-200/50 text-[#37902f] border border-stone-200 rounded-lg p-1"
-      >
-        Gönderi Ekle
-        <BiMessageSquareAdd size={20} />
-      </Link>
+      {profile && profile.user.is_superuser ? (
+        <Link
+          to={"/post/add"}
+          className="bg-gradient-to-br font-semibold flex items-center justify-between from-stone-100/50 to-stone-200/50 text-[#37902f] border border-stone-200 rounded-lg p-1"
+        >
+          Gönderi Ekle
+          <BiMessageSquareAdd size={20} />
+        </Link>
+      ) : null}
       {posts && posts.length > 0 ? (
         posts.map((post: PostI) => {
           return (
@@ -29,16 +31,10 @@ function Posts() {
           );
         })
       ) : posts == undefined ? (
-        <div className="mesi">
-          <div className="my-3">
-            <Post post={undefined} />
-          </div>
-          <div className="my-3">
-            <Post post={undefined} />
-          </div>
-          <div className="my-3">
-            <Post post={undefined} />
-          </div>
+        <div className="flex flex-1 flex-col gap-4">
+          <Post post={undefined} />
+          <Post post={undefined} />
+          <Post post={undefined} />
         </div>
       ) : (
         <h3 className="font-semibold text-xl">Gönderi yok. 😢</h3>

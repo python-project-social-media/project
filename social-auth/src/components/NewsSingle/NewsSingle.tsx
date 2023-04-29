@@ -2,14 +2,18 @@ import { useState } from "react";
 import { News as NewsI } from "../../interfaces/News";
 import TimeAgo from "javascript-time-ago";
 import ReactTimeAgo from "react-time-ago";
+import tr from "javascript-time-ago/locale/tr";
 
 function NewsSingle(params: { news: NewsI | undefined }) {
   const [news, setNews] = useState(params.news);
-
+  TimeAgo.addLocale(tr);
   return (
     <div>
       {news ? (
-        <div className="bg-stone-100/50 p-3 mt-6 rounded-md" key={news.id}>
+        <div
+          className="bg-[#F6F6F6]/75 p-3 rounded-md shadow-lg hover:shadow-xl duration-200"
+          key={news.id}
+        >
           <div className="flex gap-2 items-center mb-2">
             {news.profile.profilePhotoUrl ? (
               <img
@@ -42,7 +46,7 @@ function NewsSingle(params: { news: NewsI | undefined }) {
         </div>
       ) : (
         <div>
-          <div className="bg-stone-100/75 p-3 mt-6 rounded-md">
+          <div className="bg-[#F6F6F6]/75 p-3 rounded-md shadow-lg hover:shadow-xl duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="rounded-full w-8 h-8 border font-semibold text-sm grid place-content-center fade-bg"></div>

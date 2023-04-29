@@ -48,7 +48,7 @@ function Post(params: { post: PostI | undefined }) {
     <>
       {params.post != undefined ? (
         <div
-          className={`shadow-lg hover:shadow-xl duration-300 w-full bg-[#F6F6F6]/50 max-w-md rounded-md p-3`}
+          className={`shadow-lg hover:shadow-xl duration-300 bg-[#F6F6F6]/75 rounded-md p-3`}
         >
           <div className="p-0">
             <div className="mb-3">
@@ -160,7 +160,7 @@ function Post(params: { post: PostI | undefined }) {
         </div>
       ) : (
         <div
-          className={`shadow-lg bg-[#F6F6F6] rounded-md max-w-md p-3 ${
+          className={`shadow-lg bg-[#F6F6F6]/75 rounded-md p-3 ${
             pathname == "/post/all" ? "min-w-[400px]" : null
           } `}
         >
