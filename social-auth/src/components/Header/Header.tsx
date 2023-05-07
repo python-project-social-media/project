@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import "./Header.css";
 import { useContext } from "react";
 import { HiBars3BottomRight } from "react-icons/hi2";
+import { BsSearch } from "react-icons/bs";
 import AuthContext from "../../context/context";
 import Wave from "src/assets/Wave.svg";
 import { useLocation } from "react-router-dom";
@@ -55,6 +56,16 @@ function Header() {
             >
               Haftanın Enleri
             </Link>
+          </div>
+          <div className="flex items-stretch">
+            <input
+              type="text"
+              className="bg-gradient-to-br from-stone-100 to-stone-200 border-stone-200 border rounded-l-lg text-sm shadow-md outline-none px-1 py-[2px]"
+            />
+            <div className="bg-gradient-to-br from-stone-100 to-stone-200 border-stone-200 border  rounded-r-lg grid place-content-center shadow-md outline-none px-1 py-[2px]">
+              {" "}
+              <BsSearch />
+            </div>
           </div>
           <div className="auth-settings hidden md:flex items-center gap-4">
             {profile ? (

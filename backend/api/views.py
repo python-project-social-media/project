@@ -148,20 +148,19 @@ class App:
                 self.get_my_posts_helper, profile_id)
             arr = []
             for i in result:
-                print(i)
                 data = self.serialize_post(i)
                 data['liked'] = i.get('EXISTS( (profile) -[:Liked]-> (post) )')
                 arr.append(data)
 
             return arr
 
-    #!Add profile
-
-    def add_profile_helper(self, tx, username, profile_id):
+    
+    #!Search post
+    def search_post_helper(self, tx, text):
         query = (
-            "CREATE (profile:Profile {profile_id:$profile_id, username:$username, followers_count:0, following_count:0}) RETURN profile"
+            "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' RETURN post"
         )
-        result = tx.run(query, username=username, profile_id=profile_id)
+        result = tx.run(query, text=text)
 
         try:
             return ([row.data()
@@ -171,11 +170,41 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def add_profile(self, profile_id, username):
+    def search_post(self, text):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.add_profile_helper, username, profile_id)
-            return result
+                self.search_post_helper, text)
+            arr=[]
+            if len(result)>0:
+                for i in result:
+                    arr.append(self.serialize_post(i))
+            return arr
+
+    #!Search news
+    def search_news_helper(self, tx, text):
+        query = (
+            "MATCH (news:News) WHERE toLower(news.title) CONTAINS '"+ text.strip().lower() +"' or toLower(news.description) CONTAINS '"+ text.strip().lower() +"' RETURN news"
+        )
+        result = tx.run(query, text=text)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def search_news(self, text):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.search_news_helper, text)
+            arr=[]
+            if len(result)>0:
+                for i in result:
+                    arr.append(self.serialize_news(i))
+            return arr
+
 
     #!Is following
     def is_following_profile_helper(self, tx, profile_id, follow_id):
@@ -509,7 +538,6 @@ class App:
             return arr
 
     #!Check if liked
-
     def check_if_liked_post_helper(self, tx, post_id, profile_id):
         query = (
             "MATCH (post:Post) "
@@ -640,7 +668,6 @@ class App:
             return arr
 
     #!Get a news
-
     def get_news_helper(self, tx, id):
         query = (
             "MATCH (news:News) WHERE ID(news)=$id RETURN news,ID(news)"
@@ -992,7 +1019,6 @@ def AddPost(request):
         else:
             return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
         upload = request.FILES.get('upload')
-        print(upload)
         if upload != None:
             fss = FileSystemStorage()
             file = fss.save("posts"+"/"+upload.name, upload)
@@ -1013,7 +1039,6 @@ def AddPost(request):
 @permission_classes([AllowAny])
 def GetPost(request, id):
     if request.user:
-        print(request.user)
         profile = models.Profile.objects.filter(user=request.user)
         if len(profile) > 0:
             profile = profile[0]
@@ -1117,7 +1142,6 @@ def MostCommentedPost(request):
     try:
         if not request.user.is_anonymous:
             profile = models.Profile.objects.filter(user=request.user)
-            print(profile)
             if len(profile) > 0:
                 profile = profile[0]
             else:
@@ -1455,6 +1479,16 @@ def UpdateNews(request, id):
     else:
         return Response({"msg_en": "Couldnt find the news. 😶", "msg_tr": "Haber bulunamadı. 😶"}, status=400)
 
+@api_view(['Get'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
+def SearchPostAndNews(request, text):
+    """Haberin güncellenmesini sağlar, delete, title, description verilerini alır."""
+    result = app.search_post(text)
+    result1 = app.search_news(text)
+    result = [{"posts":result,"news":result1}]
+    app.close()
+    return Response(result,status=200)
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter

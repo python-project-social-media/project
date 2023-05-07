@@ -19,6 +19,7 @@ import AddPost from "./pages/AddPost/AddPost";
 import Posts from "./pages/Posts/Posts";
 import Profile from "./pages/Profile/Profile";
 import News from "./pages/News/News";
+import NewsDetail from "./pages/NewsDetail/NewsDetail";
 import AddNews from "./pages/AddNews/AddNews";
 import Admin from "./pages/Protected/Admin";
 
@@ -50,6 +51,7 @@ function App() {
               <Route path="/post/all" element={<Posts />} />
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/news" element={<News />} />
+              <Route path="/news/:id" element={<NewsDetail />} />
               <Route element={<Admin />}>
                 <Route path="/news/add" element={<AddNews />} />
               </Route>

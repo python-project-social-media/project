@@ -77,7 +77,6 @@ function AddPost() {
           <input
             onChange={(e) => {
               setFile(e.target.files ? e.target.files[0] : undefined);
-              console.log(e.target.files ? e.target.files[0] : undefined);
             }}
             type="file"
             className="hidden file"

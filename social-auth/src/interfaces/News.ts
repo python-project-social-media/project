@@ -1,9 +1,9 @@
 export interface News {
   image: string;
-  edit: Date;
+  edit: string;
   profile_id: number;
   description: string;
-  create: Date;
+  create: string;
   id: number;
   title: string;
   profile: Profile;

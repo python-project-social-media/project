@@ -48,7 +48,7 @@ function Post(params: { post: PostI | undefined }) {
     <>
       {params.post != undefined ? (
         <div
-          className={`shadow-lg hover:shadow-xl duration-300 bg-[#F6F6F6]/75 rounded-md p-3`}
+          className={`shadow-lg hover:shadow-xl duration-300 bg-[#F6F6F6]/60 border border-stone-200 rounded-md p-3`}
         >
           <div className="p-0">
             <div className="mb-3">
@@ -71,7 +71,7 @@ function Post(params: { post: PostI | undefined }) {
                   <p>{Post?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
                   <ReactTimeAgo
-                    date={Post?.create || 0}
+                    date={new Date(Post?.create!) || 0}
                     locale="tr-TR"
                     timeStyle={"mini-now"}
                   />
@@ -104,7 +104,7 @@ function Post(params: { post: PostI | undefined }) {
                   "gif" ? (
                   <img
                     src={"http://127.0.0.1:8000" + Post?.file}
-                    className="w-3/5 my-4"
+                    className="w-2/5 my-4"
                   />
                 ) : (Post?.file != "" &&
                     Post?.file?.split(".")[Post?.file?.split(".").length - 1] ==
@@ -160,9 +160,7 @@ function Post(params: { post: PostI | undefined }) {
         </div>
       ) : (
         <div
-          className={`shadow-lg bg-[#F6F6F6]/75 rounded-md p-3 ${
-            pathname == "/post/all" ? "min-w-[400px]" : null
-          } `}
+          className={`shadow-lg hover:shadow-xl duration-300 bg-[#F6F6F6]/60 rounded-md p-3 w-full`}
         >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

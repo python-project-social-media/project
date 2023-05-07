@@ -38,6 +38,7 @@ urlpatterns = [
     path('post/<int:post_id>/answer', views.AnswerPost),
     path('answer/<int:comment_id>/delete', views.DeleteAnswer),
     path('post/<int:post_id>/comments', views.GetComments),
+    path('post-news/search/<str:text>', views.SearchPostAndNews),
 
     # TODO News
     path('news/<int:id>', views.GetNews),

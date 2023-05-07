@@ -18,8 +18,7 @@ function Footer() {
             <p className="text-lg font-semibold">SportCom</p>
           </div>
           <p className="w-60">
-            Nam posuere accumsan porta. Integer id orci sed ante tincidunt
-            tincidunt sit amet sed libero.
+            Sporlar hakkında konuşabileceğiniz, tartışabileceğiniz bir platform.
           </p>
           <p className="mt-2">© SportCom 2023</p>
         </div>

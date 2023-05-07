@@ -3,18 +3,22 @@ import { News as NewsI } from "../../interfaces/News";
 import TimeAgo from "javascript-time-ago";
 import ReactTimeAgo from "react-time-ago";
 import tr from "javascript-time-ago/locale/tr";
+import { Link } from "react-router-dom";
 
-function NewsSingle(params: { news: NewsI | undefined }) {
+function NewsSingle(params: { news: NewsI | null | undefined }) {
   const [news, setNews] = useState(params.news);
   TimeAgo.addLocale(tr);
   return (
     <div>
-      {news ? (
+      {news != undefined && news != null ? (
         <div
-          className="bg-[#F6F6F6]/75 p-3 rounded-md shadow-lg hover:shadow-xl duration-200"
+          className="bg-[#F6F6F6]/60 border my-3 border-stone-200 block p-3 rounded-md shadow-lg hover:shadow-xl duration-200"
           key={news.id}
         >
-          <div className="flex gap-2 items-center mb-2">
+          <Link
+            to={`/profile/${news.profile.id}`}
+            className="flex gap-2 items-center mb-2"
+          >
             {news.profile.profilePhotoUrl ? (
               <img
                 src={"http://127.0.0.1:8000" + news.profile.profilePhotoUrl}
@@ -29,24 +33,26 @@ function NewsSingle(params: { news: NewsI | undefined }) {
             <span>{news.profile.user.username}</span>
             <p className="font-bold scale-110">•</p>
             <ReactTimeAgo
-              date={news?.create || 0}
+              date={new Date(news?.create) || 0}
               locale="tr-TR"
               timeStyle={"mini-now"}
             />
-          </div>
-          <h3 className="text-lg font-semibold">{news.title}</h3>
-          <p className="italic">{news.description}</p>
-          {news?.image ? (
-            <img
-              src={"http://127.0.0.1:8000" + news.image}
-              alt={news.title}
-              className="h-48 mt-3"
-            />
-          ) : null}
+          </Link>
+          <Link to={`/news/${news.id}`}>
+            <h3 className="text-lg font-semibold">{news.title}</h3>
+            <p className="italic">{news.description}</p>
+            {news?.image ? (
+              <img
+                src={"http://127.0.0.1:8000" + news.image}
+                alt={news.title}
+                className="h-48 mt-3"
+              />
+            ) : null}
+          </Link>
         </div>
       ) : (
         <div>
-          <div className="bg-[#F6F6F6]/75 p-3 rounded-md shadow-lg hover:shadow-xl duration-200">
+          <div className="bg-[#F6F6F6]/60 p-3 rounded-md shadow-lg hover:shadow-xl duration-200">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <div className="rounded-full w-8 h-8 border font-semibold text-sm grid place-content-center fade-bg"></div>

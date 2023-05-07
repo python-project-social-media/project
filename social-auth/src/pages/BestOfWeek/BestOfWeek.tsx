@@ -75,7 +75,7 @@ function BestOfWeek() {
             <span className="en">En</span>
             <span className="en-rest ml-[0.3rem]">çok yorum alan gönderi</span>
           </h3>
-          <div className="min-w-[400px]">
+          <div className="min-w-[200px] max-w-[500px]">
             <Post post={mostCommented} key={mostCommented?.id} />
           </div>
         </div>
