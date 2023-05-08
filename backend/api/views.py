@@ -16,7 +16,6 @@ import logging
 from neo4j.exceptions import ServiceUnavailable
 from dotenv import load_dotenv
 import os
-import time
 import datetime
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.decorators import authentication_classes
@@ -28,10 +27,6 @@ from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_str
 from django.utils.http import int_to_base36, urlsafe_base64_decode
 from django.contrib.auth.models import User
-from django.http import Http404, HttpResponse
-from django.urls import reverse_lazy
-from django.views import View
-
 
 load_dotenv()
 
@@ -96,13 +91,18 @@ class App:
 
     #!Get all posts
     def get_all_posts_helper(self, tx, profile_id):
-        query = (
-            "MATCH (profile:Profile {profile_id:$profile_id}) "
-            "MATCH( (profile) - [:Following] -> (followed: Profile) ) "
-            "MATCH(followed) - [:Posted] -> (post: Post) "
-            "RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
-        )
-
+        if profile_id!=0:
+            query = (
+                "MATCH (profile:Profile {profile_id:$profile_id}) "
+                "MATCH( (profile) - [:Following] -> (followed: Profile) ) "
+                "MATCH(followed) - [:Posted] -> (post: Post) "
+                "RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
+            )
+        else:
+            query = (
+                "MATCH (post: Post) "
+                "RETURN post, ID(post), False"
+            )
         result = tx.run(query, profile_id=profile_id)
 
         try:
@@ -984,17 +984,22 @@ def Register(request):
 #! POST CRUD
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def GetAllPosts(request):
-    profile = models.Profile.objects.filter(user=request.user)
-    if len(profile) > 0:
-        profile = profile[0]
-    else:
-        return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+    if request.user.is_authenticated:
+        profile = models.Profile.objects.filter(user=request.user)
+        if len(profile) > 0:
+            profile = profile[0]
+        else:
+            return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
     try:
-        data = app.get_all_posts(profile.id)
-        data1 = app.get_my_posts(profile.id)
-        arr = data + data1
+        if request.user.is_authenticated:
+            data1 = app.get_my_posts(profile.id)
+            data = app.get_all_posts(profile.id)
+            arr = data1 + data
+        else:
+            data = app.get_all_posts(0)
+            arr=data
         res = []
         for i in arr:
             if i not in res:
@@ -1299,7 +1304,8 @@ def GetProfile(request, id):
     """
         Profili getirir, userın idsini alır.
     """
-    profile = models.Profile.objects.filter(user=User.objects.get(id=id))
+    user = get_object_or_404(User,id=id)
+    profile = models.Profile.objects.filter(user=user)
     if len(profile) > 0:
         data = serializers.ProfileSerializer(profile[0], many=False)
         return Response({"data": data.data}, status=200)
@@ -1484,11 +1490,73 @@ def UpdateNews(request, id):
 @permission_classes([AllowAny])
 def SearchPostAndNews(request, text):
     """Haberin güncellenmesini sağlar, delete, title, description verilerini alır."""
+    if len(text)>4:
+        filter = models.Filter.objects.filter(text=text.lower())
+        if len(filter)>0:
+            filter=filter[0]
+            filter.count+=1
+            filter.save()
+        else:
+            filter = models.Filter(text=text.lower(),count=1)
+            filter.save()
+
+
     result = app.search_post(text)
     result1 = app.search_news(text)
     result = [{"posts":result,"news":result1}]
     app.close()
     return Response(result,status=200)
+
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
+def GetMostSearched(request):
+    """En çok aranan filtreyi getirir."""
+    week_ago = datetime.datetime.today() - datetime.timedelta(days=7)
+
+    filter = models.Filter.objects.filter(create__gte=week_ago).order_by('-count')[:1]
+    serializer = serializers.FilterSerializer(filter[0],many=False)
+    return Response(serializer.data,status=200)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([AllowAny])
+def GetUsersPosts(request,id):
+    """Bir kullanıcının paylaştığı gönderileri gösterir."""
+    user = get_object_or_404(User,id=id)
+    profile = models.Profile.objects.filter(user=user)
+    if len(profile) > 0:
+        profile = profile[0]
+    else:
+        return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+    result = app.get_my_posts(profile.id)
+    return Response(result,status=200)
+
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def GetFollowings(request):
+    """Bir kullanıcının paylaştığı gönderileri gösterir."""
+    profile = models.Profile.objects.filter(user=request.user)
+    if len(profile) > 0:
+        profile = profile[0]
+    else:
+        return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+    arr = profile.following.all()
+    res=[]
+    for i in arr:
+        res.append(models.Profile.objects.get(user=i.id))
+    serializer = serializers.ProfileSerializer(res,many=True)
+
+
+
+    return Response(serializer.data,status=200)
+
+
+
+
+
 
 class GoogleLogin(SocialLoginView):
     adapter_class = GoogleOAuth2Adapter

@@ -12,11 +12,11 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
     <div>
       {news != undefined && news != null ? (
         <div
-          className="bg-[#F6F6F6]/60 border my-3 border-stone-200 block p-3 rounded-md shadow-lg hover:shadow-xl duration-200"
+          className="bg-[#F6F6F6]/60 border border-stone-200 block p-3 rounded-md shadow-lg hover:shadow-xl duration-200"
           key={news.id}
         >
           <Link
-            to={`/profile/${news.profile.id}`}
+            to={`/profile/${news.profile.user.id}`}
             className="flex gap-2 items-center mb-2"
           >
             {news.profile.profilePhotoUrl ? (
@@ -33,6 +33,7 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
             <span>{news.profile.user.username}</span>
             <p className="font-bold scale-110">•</p>
             <ReactTimeAgo
+              className="whitespace-nowrap"
               date={new Date(news?.create) || 0}
               locale="tr-TR"
               timeStyle={"mini-now"}

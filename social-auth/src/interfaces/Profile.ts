@@ -6,8 +6,8 @@ export interface Profile {
   profilePhotoUrl: string;
   create: string;
   edit: string;
-  followers: any[];
-  following: any[];
+  followers: number[];
+  following: number[];
 }
 
 export interface User {

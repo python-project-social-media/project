@@ -23,6 +23,8 @@ urlpatterns = [
     path('profile/add', views.AddProfile),
     path('profile/update', views.UpdateProfile),
     path('profile/<int:follow_id>/follow', views.ToogleProfileFollow),
+    path('profile/<int:id>/posts', views.GetUsersPosts),
+    path('profile/followings', views.GetFollowings),
     # path('profile/<int:mute_id>/mute', views.MuteProfile),
 
     # TODO Post
@@ -39,6 +41,7 @@ urlpatterns = [
     path('answer/<int:comment_id>/delete', views.DeleteAnswer),
     path('post/<int:post_id>/comments', views.GetComments),
     path('post-news/search/<str:text>', views.SearchPostAndNews),
+    path('most-searched', views.GetMostSearched),
 
     # TODO News
     path('news/<int:id>', views.GetNews),

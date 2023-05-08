@@ -14,7 +14,7 @@ function Posts() {
   return (
     <div className="grid place-items-center my-5 without-header px-4">
       <div className="lg:w-3/5 w-11/12">
-        {profile && profile.user.is_superuser ? (
+        {profile ? (
           <Link
             to={"/post/add"}
             className="bg-gradient-to-br font-semibold flex items-center justify-between from-stone-100/50 to-stone-200/50 text-[#37902f] border border-stone-200 rounded-lg p-1"

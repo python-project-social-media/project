@@ -38,3 +38,14 @@ class Post(models.Model):
 
     def __str__(self):
         return self.profile.user.username + ' | ' + self.text
+
+
+class Filter(models.Model):
+    text = models.CharField(max_length=24, null=False, blank=False)
+    count = models.IntegerField(null=False, blank=True, default=1)
+    edit = models.DateTimeField(
+        auto_now_add=True, blank=True, null=True)
+    create = models.DateTimeField(auto_now=True, blank=True, null=True)
+
+    def __str__(self) -> str:
+        return self.text

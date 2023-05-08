@@ -22,6 +22,12 @@ import News from "./pages/News/News";
 import NewsDetail from "./pages/NewsDetail/NewsDetail";
 import AddNews from "./pages/AddNews/AddNews";
 import Admin from "./pages/Protected/Admin";
+import SearchPage from "./pages/SearchPage/SearchPage";
+import NotFound from "./pages/NotFound/NotFound";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import "swiper/css/scrollbar";
 
 function App() {
   return (
@@ -47,11 +53,14 @@ function App() {
               <Route path="/home" element={<HomeLoggedIn />} />
               <Route path="/best-of-the-week" element={<BestOfWeek />} />
               <Route path="/post/:id" element={<PostDetail />} />
-              <Route path="/post/add" element={<AddPost />} />
               <Route path="/post/all" element={<Posts />} />
               <Route path="/profile/:id" element={<Profile />} />
               <Route path="/news" element={<News />} />
               <Route path="/news/:id" element={<NewsDetail />} />
+              <Route path="/search/:search" element={<SearchPage />} />
+              <Route element={<LoggedIn />}>
+                <Route path="/post/add" element={<AddPost />} />
+              </Route>
               <Route element={<Admin />}>
                 <Route path="/news/add" element={<AddNews />} />
               </Route>
@@ -60,6 +69,7 @@ function App() {
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
               </Route>
+              <Route path="*" element={<NotFound />} />
             </Routes>
             <Footer />
           </AuthProvider>

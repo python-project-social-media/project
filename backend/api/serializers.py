@@ -59,3 +59,10 @@ class PostSerializer(serializers.ModelSerializer):
             return profile.data
         else:
             return None
+
+
+class FilterSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = models.Filter
+        fields = '__all__'

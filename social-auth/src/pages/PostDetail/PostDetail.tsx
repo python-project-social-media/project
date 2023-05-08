@@ -62,7 +62,12 @@ function PostDetail() {
       <div className="px-4 lg:px-24 mt-10 without-header">
         {post !== null && post !== undefined ? (
           <>
-            <Post key={post?.id} post={post!} />
+            <div
+              className="lg:w-3/5 w-11/12
+            "
+            >
+              <Post key={post?.id} post={post!} />
+            </div>
             <div className="relative mt-3 max-w-md w-full">
               <input
                 onChange={(e) => {

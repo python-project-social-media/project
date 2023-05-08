@@ -71,6 +71,7 @@ function Post(params: { post: PostI | undefined }) {
                   <p>{Post?.profile?.user?.username}</p>
                   <p className="font-bold scale-110">•</p>
                   <ReactTimeAgo
+                    className="whitespace-nowrap"
                     date={new Date(Post?.create!) || 0}
                     locale="tr-TR"
                     timeStyle={"mini-now"}

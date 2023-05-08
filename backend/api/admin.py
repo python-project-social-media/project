@@ -5,3 +5,4 @@ from . import models
 admin.site.register(models.Profile)
 admin.site.register(models.Post)
 admin.site.register(models.Interest)
+admin.site.register(models.Filter)

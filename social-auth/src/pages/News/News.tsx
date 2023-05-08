@@ -1,7 +1,7 @@
 import { useContext, useEffect, useState } from "react";
 import { News as NewsI } from "../../interfaces/News";
 import { Link } from "react-router-dom";
-import { BiMessageSquareAdd, BiNews } from "react-icons/bi";
+import { BiNews } from "react-icons/bi";
 import NewsSingle from "../../components/NewsSingle/NewsSingle";
 import AuthContext from "../../context/context";
 
@@ -39,7 +39,11 @@ function News() {
         ) : null}
         {news != undefined && news != null ? (
           news?.map((singlenews: NewsI) => {
-            return <NewsSingle key={singlenews.id} news={singlenews} />;
+            return (
+              <div className="my-3">
+                <NewsSingle key={singlenews.id} news={singlenews} />
+              </div>
+            );
           })
         ) : news == undefined ? (
           <div>

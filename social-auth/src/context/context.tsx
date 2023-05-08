@@ -208,18 +208,32 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const getAllPosts = async () => {
-    await fetch("http://127.0.0.1:8000/api/post/all", {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Token " + localStorage.getItem("key"),
-      },
-    }).then(async (response: Response) => {
-      if (response.status == 200) {
-        let data: { data: PostI[] } = await response.json();
-        setPosts(data.data);
-      }
-    });
+    if (profile) {
+      await fetch("http://127.0.0.1:8000/api/post/all", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Token " + localStorage.getItem("key"),
+        },
+      }).then(async (response: Response) => {
+        if (response.status == 200) {
+          let data: { data: PostI[] } = await response.json();
+          setPosts(data.data);
+        }
+      });
+    } else {
+      await fetch("http://127.0.0.1:8000/api/post/all", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }).then(async (response: Response) => {
+        if (response.status == 200) {
+          let data: { data: PostI[] } = await response.json();
+          setPosts(data.data);
+        }
+      });
+    }
   };
 
   const deletePost = async (pid: number) => {

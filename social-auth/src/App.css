@@ -7,7 +7,11 @@ html {
 }
 
 .without-header {
-  min-height: calc(100vh - 409px);
+  min-height: calc(100vh - 368px);
+}
+
+.without-header-2 {
+  min-height: calc(100vh - 432px);
 }
 
 .fade-bg {
