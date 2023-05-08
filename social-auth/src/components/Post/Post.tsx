@@ -1,6 +1,7 @@
 import { BsThreeDots } from "react-icons/bs";
 import { AiFillHeart, AiOutlineHeart } from "react-icons/ai";
 import { RiDeleteBin5Fill } from "react-icons/ri";
+import { AiFillEdit } from "react-icons/ai";
 import { TfiCommentAlt } from "react-icons/tfi";
 import "./Post.css";
 import tr from "javascript-time-ago/locale/tr";
@@ -77,20 +78,30 @@ function Post(params: { post: PostI | undefined }) {
                     timeStyle={"mini-now"}
                   />
                 </Link>
-                {profile?.id == Post?.profile_id &&
-                pathname != "/best-of-the-week" ? (
-                  <RiDeleteBin5Fill
-                    color="red"
-                    className="cursor-pointer"
-                    onClick={async () => {
-                      await deletePost(Post?.id).then(() => {
-                        if (isPostDetail(pathname)) {
-                          navigate("/posts");
-                        }
-                      });
-                    }}
-                  />
-                ) : null}
+                <div className="flex items-center gap-3">
+                  {profile?.id == Post?.profile_id ? (
+                    <AiFillEdit
+                      onClick={() => {
+                        navigate(`/post/${Post?.id}/update`);
+                      }}
+                      className="cursor-pointer"
+                    />
+                  ) : null}
+                  {profile?.id == Post?.profile_id &&
+                  pathname != "/best-of-the-week" ? (
+                    <RiDeleteBin5Fill
+                      color="red"
+                      className="cursor-pointer"
+                      onClick={async () => {
+                        await deletePost(Post?.id).then(() => {
+                          if (isPostDetail(pathname)) {
+                            navigate("/posts");
+                          }
+                        });
+                      }}
+                    />
+                  ) : null}
+                </div>
               </div>
               <Link to={`/post/${Post?.id}`} className="mb-3 block">
                 {Post?.text}

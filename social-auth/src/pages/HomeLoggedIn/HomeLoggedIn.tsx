@@ -105,15 +105,6 @@ function HomeLoggedIn() {
           )}
         </div>
         <div className="flex-1">
-          {profile && profile.user.is_superuser ? (
-            <Link
-              to={"/news/add"}
-              className="bg-gradient-to-br font-semibold flex items-center justify-between from-stone-100/50 to-stone-200/50 text-[#37902f] border border-stone-200 rounded-lg p-1"
-            >
-              Haber Ekle
-              <BiNews size={20} />
-            </Link>
-          ) : null}
           {news != undefined && news != null ? (
             <div>
               {news?.map((singlenews: NewsI) => {

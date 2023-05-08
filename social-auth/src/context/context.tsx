@@ -6,6 +6,7 @@ import { Comment as CommentI } from "../interfaces/Comment";
 import { toast } from "react-toastify";
 import { Post as PostI } from "../interfaces/Post";
 import { useLocation } from "react-router-dom";
+import { News as NewsI } from "../interfaces/News";
 
 export default AuthContext;
 
@@ -16,6 +17,8 @@ export const AuthProvider = ({ children }: any) => {
   const [post, setPost] = useState<PostI | undefined | null>(null);
   const [posts, setPosts] = useState<PostI[]>();
   const [comments, setComments] = useState<CommentI[] | undefined>(undefined);
+  const [news, setNews] = useState<NewsI[] | undefined | null>();
+
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -258,6 +261,24 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const deleteNews = async (pid: number) => {
+    await fetch(`http://127.0.0.1:8000/api/news/${pid}/delete`, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Token " + localStorage.getItem("key"),
+      },
+    }).then(async (response: Response) => {
+      if (response.status === 200) {
+        let data = await response.json();
+        getNews().then(() => {
+          toast.success(data.msg_tr);
+        });
+        navigate("/news");
+      }
+    });
+  };
+
   const logout = async () => {
     await fetch("http://127.0.0.1:8000/api/auth/logout/", {
       method: "POST",
@@ -300,11 +321,24 @@ export const AuthProvider = ({ children }: any) => {
     });
   };
 
+  const getNews = async () => {
+    await fetch("http://127.0.0.1:8000/api/news/all", {
+      method: "GET",
+      headers: {
+        "content-type": "application/json",
+      },
+    }).then(async (resp: Response) => {
+      let data = await resp.json();
+      setNews(data.data);
+    });
+  };
+
   let contextData = {
     profile: profile,
     comments: comments,
     post: post,
     posts: posts,
+    news: news,
     responseGoogle: responseGoogle,
     addProfile: addProfile,
     logout: logout,
@@ -315,7 +349,9 @@ export const AuthProvider = ({ children }: any) => {
     deletePost: deletePost,
     getComments: getComments,
     GetPost: GetPost,
+    getNews: getNews,
     deleteComment: deleteComment,
+    deleteNews: deleteNews,
     isPostDetail: isPostDetail,
   };
 

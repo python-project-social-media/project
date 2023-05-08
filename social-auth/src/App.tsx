@@ -28,6 +28,8 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import "swiper/css/scrollbar";
+import UpdatePost from "./pages/UpdatePost/UpdatePost";
+import UpdateNews from "./pages/UpdateNews/UpdateNews";
 
 function App() {
   return (
@@ -59,9 +61,11 @@ function App() {
               <Route path="/news/:id" element={<NewsDetail />} />
               <Route path="/search/:search" element={<SearchPage />} />
               <Route element={<LoggedIn />}>
+                <Route path="/post/:id/update" element={<UpdatePost />} />
                 <Route path="/post/add" element={<AddPost />} />
               </Route>
               <Route element={<Admin />}>
+                <Route path="/news/:id/update" element={<UpdateNews />} />
                 <Route path="/news/add" element={<AddNews />} />
               </Route>
               <Route element={<AuthProtect />}>

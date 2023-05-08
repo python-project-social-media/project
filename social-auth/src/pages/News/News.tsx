@@ -6,24 +6,11 @@ import NewsSingle from "../../components/NewsSingle/NewsSingle";
 import AuthContext from "../../context/context";
 
 function News() {
-  const [news, setNews] = useState<NewsI[] | undefined | null>();
-  const { profile }: any = useContext(AuthContext);
+  const { profile, getNews, news }: any = useContext(AuthContext);
 
   useEffect(() => {
     getNews();
   }, []);
-
-  const getNews = async () => {
-    await fetch("http://127.0.0.1:8000/api/news/all", {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-      },
-    }).then(async (resp: Response) => {
-      let data = await resp.json();
-      setNews(data.data);
-    });
-  };
 
   return (
     <div className="without-header grid place-items-center mt-10">

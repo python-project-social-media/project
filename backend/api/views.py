@@ -363,12 +363,19 @@ class App:
 
     #!Get post
     def get_post_helper(self, tx, id, profile_id):
-        query = (
-            "MATCH (post:Post) "
-            "WHERE ID(post)=$id "
-            "MATCH (profile:Profile {profile_id:$profile_id}) "
-            "RETURN post,ID(post),EXISTS( (profile) -[:Liked]-> (post) )"
-        )
+        if profile_id!=0:
+            query = (
+                "MATCH (post:Post) "
+                "WHERE ID(post)=$id "
+                "MATCH (profile:Profile {profile_id:$profile_id}) "
+                "RETURN post,ID(post),EXISTS( (profile) -[:Liked]-> (post) )"
+            )
+        else:
+            query = (
+                "MATCH (post:Post) "
+                "WHERE ID(post)=$id "
+                "RETURN post,ID(post), False"
+            )
         result = tx.run(query, id=id, profile_id=profile_id)
 
         try:
@@ -385,7 +392,6 @@ class App:
                 self.get_post_helper, id=id, profile_id=profile_id)
             if result == []:
                 return "E"
-            print(result)
             data = self.serialize_post(result[0])
             data['liked'] = result[0].get(
                 'EXISTS( (profile) -[:Liked]-> (post) )')
@@ -1081,11 +1087,12 @@ def DeletePost(request, id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdatePost(request, id):
-    post = app.get_post(id=id)
+    post = app.get_post(id=id,profile_id=0)
     if post == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
     if request.user.id == post.get('profile').get('user').get('id'):
         if request.data:
+            print(request.data)
             if request.data.get('delete') == 'true':
                 post_data = app.update_post(
                     id=id, file='', text=request.data.get('text'), delete=True)
@@ -1099,7 +1106,7 @@ def UpdatePost(request, id):
                         id=id, file=file_url, text=request.data.get('text'), delete=False)
                 else:
                     post_data = app.update_post(
-                        id=id, file='', text=request.data.get('text'), delete=False)
+                        id=id, file=post.get('file'), text=request.data.get('text'), delete=False)
             return Response({"msg_en": "Successfully updated the post. 🚀", "msg_tr": "Gönderi başarıyla güncellendi. 🚀", "data": post_data}, status=200)
         else:
             return Response({"msg_en": "There is no data to update. 😒", "msg_tr": "Güncelleyecek veri vermediniz. 😒"}, status=400)
