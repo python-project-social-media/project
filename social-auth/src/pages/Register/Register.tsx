@@ -6,6 +6,7 @@ import AuthContext from "src/context/context";
 import { FaUserAlt, FaUserAstronaut, FaUserSecret } from "react-icons/fa";
 import { AiFillLock } from "react-icons/ai";
 import { MdEmail } from "react-icons/md";
+import { Helmet } from "react-helmet";
 
 function Register() {
   let { register }: any = useContext(AuthContext);
@@ -19,6 +20,9 @@ function Register() {
 
   return (
     <>
+      <Helmet>
+        <title>Kayıt Ol • SportCom</title>
+      </Helmet>
       <div className="grid place-items-center mb-[0.68rem]">
         <div className="mb-6 mt-12 lg:w-1/2 w-11/12">
           <div>

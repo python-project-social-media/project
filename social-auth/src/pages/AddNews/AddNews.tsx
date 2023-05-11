@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { CiCircleRemove } from "react-icons/ci";
+import { Helmet } from "react-helmet";
 
 function AddNews() {
   const [description, setDescription] = useState<string>("");
@@ -19,6 +20,14 @@ function AddNews() {
 
   const addNews = async () => {
     let formData: FormData = new FormData();
+    if (description.length > 180) {
+      toast.info("Açıklamanın maksimum uzunluğu 180 karakterdir.");
+      return;
+    }
+    if (title.length > 100) {
+      toast.info("Başlığın maksimum uzunluğu 100 karakterdir.");
+      return;
+    }
     formData.append("description", description);
     formData.append("title", title);
     formData.append("upload", file!);
@@ -41,6 +50,9 @@ function AddNews() {
 
   return (
     <div className="lg:px-10 px-4 without-header">
+      <Helmet>
+        <title>Haber Ekle • SportCom</title>
+      </Helmet>
       <div className="grid place-items-center mt-10">
         <input
           type="text"

@@ -14,7 +14,7 @@ export const AuthProvider = ({ children }: any) => {
   const [profile, setProfile] = useState();
   const [googleDataState, setGoogleDataState] = useState();
   const [key, setKey] = useState<string>();
-  const [post, setPost] = useState<PostI | undefined | null>(null);
+  const [post, setPost] = useState<PostI | undefined | null>(undefined);
   const [posts, setPosts] = useState<PostI[]>();
   const [comments, setComments] = useState<CommentI[] | undefined>(undefined);
   const [news, setNews] = useState<NewsI[] | undefined | null>();
@@ -288,6 +288,9 @@ export const AuthProvider = ({ children }: any) => {
     }).then(() => {
       setKey(undefined);
       setProfile(undefined);
+      setPosts(undefined);
+      setPost(null);
+      setNews(undefined);
       localStorage.removeItem("key");
       localStorage.removeItem("nkey");
       localStorage.removeItem("profile");
@@ -303,22 +306,42 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const GetPost = async (pid: number) => {
-    await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
-      method: "GET",
-      headers: {
-        "content-type": "application/json",
-        Authorization: "Token " + localStorage.getItem("key"),
-      },
-    }).then(async (resp: Response) => {
-      let data = await resp.json();
-      if (resp.status == 200) {
-        if (data.data) {
-          setPost(data.data);
+    console.log(localStorage.getItem("key"));
+
+    if (localStorage.getItem("key") != null) {
+      await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+          Authorization: "Token " + localStorage.getItem("key"),
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (resp.status == 200) {
+          if (data.data) {
+            setPost(data.data);
+          }
+        } else if (resp.status == 400) {
+          setPost(null);
         }
-      } else if (resp.status == 400) {
-        setPost(null);
-      }
-    });
+      });
+    } else {
+      await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {
+        method: "GET",
+        headers: {
+          "content-type": "application/json",
+        },
+      }).then(async (resp: Response) => {
+        let data = await resp.json();
+        if (resp.status == 200) {
+          if (data.data) {
+            setPost(data.data);
+          }
+        } else if (resp.status == 400) {
+          setPost(null);
+        }
+      });
+    }
   };
 
   const getNews = async () => {

@@ -3,7 +3,7 @@ import { News as NewsI } from "../../interfaces/News";
 import TimeAgo from "javascript-time-ago";
 import ReactTimeAgo from "react-time-ago";
 import tr from "javascript-time-ago/locale/tr";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { RiDeleteBin5Fill } from "react-icons/ri";
 import { AiFillEdit } from "react-icons/ai";
 import AuthContext from "../../context/context";
@@ -12,6 +12,7 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
   const [news, setNews] = useState(params.news);
   const { profile, deleteNews }: any = useContext(AuthContext);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   TimeAgo.addLocale(tr);
   return (
@@ -28,7 +29,7 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
             >
               {news.profile.profilePhotoUrl ? (
                 <img
-                  src={"http://127.0.0.1:8000" + news.profile.profilePhotoUrl}
+                  src={news.profile.profilePhotoUrl}
                   alt={news.profile.user.username}
                   className="w-6 h-6 rounded-full"
                 />
@@ -46,28 +47,31 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
                 timeStyle={"mini-now"}
               />
             </Link>
-
-            <div className="flex items-center gap-3">
-              {profile?.id == news?.profile_id && profile.user.is_superuser ? (
-                <AiFillEdit
-                  onClick={() => {
-                    navigate(`/news/${news?.id}/update`);
-                  }}
-                  className="cursor-pointer"
-                />
-              ) : null}
-              {profile?.id == news?.profile_id && profile.user.is_superuser ? (
-                <RiDeleteBin5Fill
-                  color="red"
-                  className="cursor-pointer"
-                  onClick={async () => {
-                    await deleteNews(news.id).then(() => {
-                      navigate("/news");
-                    });
-                  }}
-                />
-              ) : null}
-            </div>
+            {pathname != "/home" ? (
+              <div className="flex items-center gap-3">
+                {profile?.id == news?.profile_id &&
+                profile.user.is_superuser ? (
+                  <AiFillEdit
+                    onClick={() => {
+                      navigate(`/news/${news?.id}/update`);
+                    }}
+                    className="cursor-pointer"
+                  />
+                ) : null}
+                {profile?.id == news?.profile_id &&
+                profile.user.is_superuser ? (
+                  <RiDeleteBin5Fill
+                    color="red"
+                    className="cursor-pointer"
+                    onClick={async () => {
+                      await deleteNews(news.id).then(() => {
+                        navigate("/news");
+                      });
+                    }}
+                  />
+                ) : null}
+              </div>
+            ) : null}
           </div>
           <Link to={`/news/${news.id}`}>
             <h3 className="text-lg font-semibold">{news.title}</h3>
@@ -76,7 +80,7 @@ function NewsSingle(params: { news: NewsI | null | undefined }) {
               <img
                 src={"http://127.0.0.1:8000" + news.image}
                 alt={news.title}
-                className="h-48 mt-3"
+                className="w-1/2 mt-3"
               />
             ) : null}
           </Link>

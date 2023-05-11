@@ -5,6 +5,7 @@ import AuthContext from "../../context/context";
 import { toast } from "react-toastify";
 import { Post as PostI } from "../../interfaces/Post";
 import Post from "../../components/Post/Post";
+import { Helmet } from "react-helmet";
 
 function Profile() {
   const [profileCurr, setProfileCurr] = useState<ProfileI | number>(0);
@@ -63,6 +64,13 @@ function Profile() {
 
   return (
     <div className="mt-5 without-header px-4 lg:px-16">
+      <Helmet>
+        {profileCurr && typeof profileCurr != "number" ? (
+          <title>{profileCurr?.user?.username} • SportCom</title>
+        ) : (
+          <title>Profil • SportCom</title>
+        )}
+      </Helmet>
       {typeof profileCurr != "number" ? (
         <div className=" bg-stone-100/50 shadow-md hover:shadow-lg rounded-md duration-200 p-3">
           <div className="flex items-center gap-3">
@@ -139,7 +147,9 @@ function Profile() {
         </div>
       ) : null}
       {usersPosts && usersPosts.length == 0 ? (
-        <div>Kullanıcı gönderi paylaşmamış. 😶</div>
+        <div className="text-lg mt-5 font-semibold">
+          Kullanıcı gönderi paylaşmamış. 😶
+        </div>
       ) : null}
     </div>
   );

@@ -15,7 +15,7 @@ function Sidebar() {
   let { profile, logout }: any = useContext(AuthContext);
 
   return (
-    <div className="h-full sidebar py-5 px-6 fixed md:hidden block -right-full top-0 bg-[#F6F6F6] w-5/6 sm:w-3/4 z-50 shadow-md duration-300">
+    <div className="h-full sidebar py-5 px-6 fixed lg:hidden block -right-full top-0 bg-[#F6F6F6] w-5/6 sm:w-3/4 z-50 shadow-md duration-300">
       <div className="flex justify-end ">
         <HiBars3BottomRight
           size={22}
@@ -48,7 +48,7 @@ function Sidebar() {
         >
           Gönderiler
         </Link>
-        <Link to={"/"} className="w-fit" onClick={toggleSidebar}>
+        <Link to={"/news"} className="w-fit" onClick={toggleSidebar}>
           Haberler
         </Link>
         <Link

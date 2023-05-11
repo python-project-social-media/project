@@ -2,6 +2,7 @@ import { useState } from "react";
 import { CiCircleRemove } from "react-icons/ci";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
+import { Helmet } from "react-helmet";
 
 function AddPost() {
   const [text, setText] = useState<string>("");
@@ -36,6 +37,9 @@ function AddPost() {
 
   return (
     <div className="lg:px-10 px-4 without-header">
+      <Helmet>
+        <title>Gönderi Ekle • SportCom</title>
+      </Helmet>
       <div className="grid place-items-center mt-10">
         <textarea
           onChange={(e) => {

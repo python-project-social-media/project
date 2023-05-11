@@ -59,15 +59,6 @@ function Footer() {
               <AiFillInstagram />
             </div>
           </div>
-          <div className="grid place-content-center mt-3">
-            <div className="w-10 rounded-lg bg-stone-200">
-              <img
-                src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/2000px-Flag_of_Turkey.svg.png"
-                alt="Turkish Flag"
-                className="w-5 h-5 rounded-full cursor-pointer"
-              />
-            </div>
-          </div>
         </div>
       </div>
       <img

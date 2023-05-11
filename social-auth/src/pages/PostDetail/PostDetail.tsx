@@ -5,9 +5,11 @@ import Comment from "../Comment/Comment";
 import { toast } from "react-toastify";
 import AuthContext from "../../context/context";
 import { Comment as CommentI } from "../../interfaces/Comment";
+import { Helmet } from "react-helmet";
 
 function PostDetail() {
   const { comments, getComments, post, GetPost }: any = useContext(AuthContext);
+  console.log(post);
 
   const [text, setText] = useState<string>("");
   const params = useParams();
@@ -59,6 +61,13 @@ function PostDetail() {
 
   return (
     <>
+      <Helmet>
+        {post != null && post != undefined ? (
+          <title>{post?.text.slice(0, 11)}... • SportCom</title>
+        ) : (
+          <title>Haber Detayı • SportCom</title>
+        )}
+      </Helmet>
       <div className="px-4 lg:px-24 mt-10 without-header">
         {post !== null && post !== undefined ? (
           <>
@@ -125,7 +134,9 @@ function PostDetail() {
             ) : null}
           </>
         ) : post === undefined ? (
-          <Post post={undefined} />
+          <div className="lg:w-3/5 w-11/12">
+            <Post post={undefined} />
+          </div>
         ) : (
           <div className="text-center mt-5 text-xl font-semibold">
             Gönderi bulunamadı. 🥲

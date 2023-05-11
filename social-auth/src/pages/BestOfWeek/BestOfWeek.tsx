@@ -6,6 +6,7 @@ import "./BestOfWeek.css";
 import { Post as PostI } from "../../interfaces/Post";
 import { Search as SearchI } from "../../interfaces/Filter";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
 
 function BestOfWeek() {
   const [mostLiked, setMostLiked] = useState<PostI>();
@@ -73,6 +74,9 @@ function BestOfWeek() {
   }, []);
   return (
     <div className="lg:px-16 px-8">
+      <Helmet>
+        <title>Haftanın En İyileri • SportCom</title>
+      </Helmet>
       <div>
         <h3 className="font-semibold text-lg mb-1 mt-5">
           <span className="en">En</span>

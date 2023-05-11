@@ -6,10 +6,14 @@ import people from "src/assets/ios-people-outline.svg";
 import Mailbox from "src/assets/mailbox.svg";
 import Chatting from "src/assets/Chatting.svg";
 import Chat from "src/assets/Chat.svg";
+import { Helmet } from "react-helmet";
 
 function Home() {
   return (
     <>
+      <Helmet>
+        <title>Anasayfa • SportCom</title>
+      </Helmet>
       <div className="flex justify-center">
         <div className="px-3 lg:px-16">
           <div className="flex flex-wrap w-full lg:justify-between justify-center mt-10 pt-5 items-center">

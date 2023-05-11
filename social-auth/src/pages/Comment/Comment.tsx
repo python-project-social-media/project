@@ -43,7 +43,7 @@ function Comment(comment: {
                     timeStyle={"mini-now"}
                   />
                 </div>
-                {Comment?.profile_id == profile.id ? (
+                {profile && Comment?.profile_id == profile.id ? (
                   <RiDeleteBin6Fill
                     onClick={() => {
                       deleteComment(Comment?.id, comment.pid);

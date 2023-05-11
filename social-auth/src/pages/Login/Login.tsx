@@ -5,6 +5,7 @@ import { useContext, useState } from "react";
 import AuthContext from "src/context/context";
 import { FaUserAlt } from "react-icons/fa";
 import { AiFillLock } from "react-icons/ai";
+import { Helmet } from "react-helmet";
 
 function Login() {
   let { responseGoogle, login }: any = useContext(AuthContext);
@@ -14,6 +15,9 @@ function Login() {
 
   return (
     <>
+      <Helmet>
+        <title>Giriş Yap • SportCom</title>
+      </Helmet>
       <div className="grid place-items-center mb-[0.68rem]">
         <div className="mb-6 mt-12 lg:w-1/2 w-4/5">
           <div>

@@ -4,6 +4,7 @@ import Post from "../../components/Post/Post";
 import AuthContext from "../../context/context";
 import { Link } from "react-router-dom";
 import { BiMessageSquareAdd } from "react-icons/bi";
+import { Helmet } from "react-helmet";
 
 function Posts() {
   const { posts, getAllPosts, profile }: any = useContext(AuthContext);
@@ -13,6 +14,9 @@ function Posts() {
 
   return (
     <div className="grid place-items-center my-5 without-header px-4">
+      <Helmet>
+        <title>Gönderiler • SportCom</title>
+      </Helmet>
       <div className="lg:w-3/5 w-11/12">
         {profile ? (
           <Link

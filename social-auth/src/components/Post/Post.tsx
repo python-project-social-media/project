@@ -19,6 +19,7 @@ function Post(params: { post: PostI | undefined }) {
   const [Post, setPost] = useState<PostI | undefined>(params.post);
   const [like, setLike] = useState<boolean>(false);
   const navigate = useNavigate();
+
   const { pathname } = useLocation();
 
   TimeAgo.addLocale(tr);
@@ -78,30 +79,29 @@ function Post(params: { post: PostI | undefined }) {
                     timeStyle={"mini-now"}
                   />
                 </Link>
-                <div className="flex items-center gap-3">
-                  {profile?.id == Post?.profile_id ? (
+                {profile?.id == Post?.profile_id &&
+                pathname != "/best-of-the-week" &&
+                pathname != "/home" ? (
+                  <div className="flex items-center gap-3">
                     <AiFillEdit
                       onClick={() => {
                         navigate(`/post/${Post?.id}/update`);
                       }}
                       className="cursor-pointer"
                     />
-                  ) : null}
-                  {profile?.id == Post?.profile_id &&
-                  pathname != "/best-of-the-week" ? (
                     <RiDeleteBin5Fill
                       color="red"
                       className="cursor-pointer"
                       onClick={async () => {
                         await deletePost(Post?.id).then(() => {
                           if (isPostDetail(pathname)) {
-                            navigate("/posts");
+                            navigate("/post/all");
                           }
                         });
                       }}
                     />
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </div>
               <Link to={`/post/${Post?.id}`} className="mb-3 block">
                 {Post?.text}

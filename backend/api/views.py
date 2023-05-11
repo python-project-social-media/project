@@ -156,11 +156,18 @@ class App:
 
     
     #!Search post
-    def search_post_helper(self, tx, text):
-        query = (
-            "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' RETURN post"
-        )
-        result = tx.run(query, text=text)
+    def search_post_helper(self, tx, text,profile_id):
+        if profile_id!=0:
+            query = (
+                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' MATCH (profile:Profile {profile_id:$profile_id}) RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
+            )
+        else:
+            
+            query = (
+                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' RETURN post,ID(post), False"
+            )
+        
+        result = tx.run(query, text=text,profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -170,20 +177,24 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def search_post(self, text):
+    def search_post(self, text,profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.search_post_helper, text)
+                self.search_post_helper, text,profile_id)
             arr=[]
             if len(result)>0:
                 for i in result:
-                    arr.append(self.serialize_post(i))
+                    data = self.serialize_post(i)
+                    print(i)
+                    data['liked'] = i.get(
+                'EXISTS( (profile) -[:Liked]-> (post) )')
+                    arr.append(data)
             return arr
 
     #!Search news
     def search_news_helper(self, tx, text):
         query = (
-            "MATCH (news:News) WHERE toLower(news.title) CONTAINS '"+ text.strip().lower() +"' or toLower(news.description) CONTAINS '"+ text.strip().lower() +"' RETURN news"
+            "MATCH (news:News) WHERE toLower(news.title) CONTAINS '"+ text.strip().lower() +"' or toLower(news.description) CONTAINS '"+ text.strip().lower() +"' RETURN news,ID(news)"
         )
         result = tx.run(query, text=text)
 
@@ -289,9 +300,10 @@ class App:
 
     #!Add post
     def add_post_helper(self, tx, file, text, profile_id):
-        query = (
-            "MATCH (profile:Profile {profile_id:$profile_id}) CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) CREATE (profile) -[:Posted]-> (post) RETURN post,ID(post)"
-        )
+        query = ("MATCH (profile:Profile {profile_id:$profile_id}) "
+            "CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) "
+            "CREATE (profile) -[:Posted]-> (post) RETURN post,ID(post)")
+        
         result = tx.run(query, text=text, profile_id=profile_id, file=file)
 
         try:
@@ -742,6 +754,7 @@ class App:
                 "SET news.image=$image "
                 "RETURN news"
             )
+        
         result = tx.run(query, id=id, title=title,
                         description=description, image=image, delete=delete)
 
@@ -1049,7 +1062,7 @@ def AddPost(request):
 @authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def GetPost(request, id):
-    if request.user:
+    if not request.user.is_anonymous:
         profile = models.Profile.objects.filter(user=request.user)
         if len(profile) > 0:
             profile = profile[0]
@@ -1068,7 +1081,7 @@ def GetPost(request, id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def DeletePost(request, id):
-    post = app.get_post(id=id)
+    post = app.get_post(id=id,profile_id=0)
     if post == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
     if request.user.id == post.get('profile').get('user').get('id'):
@@ -1466,6 +1479,7 @@ def DeleteNews(request, id):
 def UpdateNews(request, id):
     """Haberin güncellenmesini sağlar, delete, title, description verilerini alır."""
     result = app.get_news(id)
+    print(result.get('image'))
     if result != "E":
         if result.get('profile').get('user').get('id') != request.user.id:
             return Response({"msg_tr": "Bunu güncellemek için yetkiniz yok. 😥", "msg_en": "You are not allowed to update this news. 😥"}, status=400)
@@ -1483,7 +1497,7 @@ def UpdateNews(request, id):
                         result = app.update_news(file_url, id, request.data.get(
                             'title'), request.data.get('description'), False)
                     else:
-                        result = app.update_news('', id, request.data.get(
+                        result = app.update_news(result.get('image'), id, request.data.get(
                             'title'), request.data.get('description'), False)
 
                 return Response({"msg_en": "Successfully updated the news. ✨", "msg_tr": "Haber başarıyla güncellendi. ✨", "data": result}, status=200)
@@ -1507,13 +1521,16 @@ def SearchPostAndNews(request, text):
             filter = models.Filter(text=text.lower(),count=1)
             filter.save()
 
-
-    result = app.search_post(text)
-    result1 = app.search_news(text)
+    if not request.user.is_anonymous:
+        print("girişli")
+        result = app.search_post(text,profile_id=models.Profile.objects.get(user=request.user).id)
+        result1 = app.search_news(text)
+    else:
+        result = app.search_post(text,profile_id=0)
+        result1 = app.search_news(text)
     result = [{"posts":result,"news":result1}]
     app.close()
     return Response(result,status=200)
-
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])

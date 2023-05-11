@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { BiNews } from "react-icons/bi";
 import NewsSingle from "../../components/NewsSingle/NewsSingle";
 import AuthContext from "../../context/context";
+import { Helmet } from "react-helmet";
 
 function News() {
   const { profile, getNews, news }: any = useContext(AuthContext);
@@ -14,6 +15,9 @@ function News() {
 
   return (
     <div className="without-header grid place-items-center mt-10">
+      <Helmet>
+        <title>Haberler • SportCom</title>
+      </Helmet>
       <div className="lg:w-1/2 w-3/4">
         {profile && profile.user.is_superuser ? (
           <Link

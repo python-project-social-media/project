@@ -9,6 +9,8 @@ import { BiNews } from "react-icons/bi";
 import { Profile as ProfileI } from "../../interfaces/Profile";
 import { Navigation, Pagination, EffectCards } from "swiper";
 import { Swiper, SwiperSlide } from "swiper/react";
+import { Helmet } from "react-helmet";
+
 import "./HomeLoggedIn.css";
 function HomeLoggedIn() {
   const { profile }: any = useContext(AuthContext);
@@ -57,7 +59,6 @@ function HomeLoggedIn() {
     }).then(async (resp: Response) => {
       let data: ProfileI[] = await resp.json();
       setFollowings(data);
-      console.log(data);
     });
   };
 
@@ -75,6 +76,9 @@ function HomeLoggedIn() {
 
   return (
     <div className="lg:px-14 px-6 mt-5">
+      <Helmet>
+        <title>Anasayfa • SportCom</title>
+      </Helmet>
       <h3 className="text-lg font-semibold">
         <span>Hoşgeldin, </span>
         <span className="en">{profile?.user?.username}</span>
@@ -137,55 +141,165 @@ function HomeLoggedIn() {
         {followings && followings.length > 0 ? (
           <div className="mt-8">
             <h3 className="text-xl font-semibold mb-3">Takip Ettiklerin</h3>
-            <Swiper
-              spaceBetween={60}
-              modules={[Navigation]}
-              slidesPerView={4}
-              navigation={true}
-            >
-              {followings.map((profile: ProfileI) => {
-                return (
-                  <SwiperSlide>
-                    <Link
-                      to={`/profile/${profile.user.id}`}
-                      className="bg-stone-200 block border rounded-md shadow-md hover:shadow-lg duration-200 border-stone-300 p-3"
-                    >
-                      <div>
-                        <div className="grid place-content-center">
-                          {profile.profilePhotoUrl ? (
-                            <img
-                              src={profile.profilePhotoUrl}
-                              className="rounded-full select-none w-16 h-16 "
-                            />
-                          ) : (
-                            <div className="rounded-full select-none w-16 h-16 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
-                              {profile.user.username.slice(0, 2).toUpperCase()}
+            <div className="lg:block hidden">
+              <Swiper
+                spaceBetween={0}
+                modules={[Navigation]}
+                slidesPerView={4}
+                navigation={true}
+              >
+                {followings.map((profile: ProfileI) => {
+                  return (
+                    <SwiperSlide key={profile.id}>
+                      <Link
+                        to={`/profile/${profile.user.id}`}
+                        className="bg-stone-200 block border mx-3 rounded-md shadow-md hover:shadow-lg duration-200 border-stone-300 p-3"
+                      >
+                        <div>
+                          <div className="grid place-content-center">
+                            {profile.profilePhotoUrl ? (
+                              <img
+                                src={profile.profilePhotoUrl}
+                                className="rounded-full select-none w-16 h-16 "
+                              />
+                            ) : (
+                              <div className="rounded-full select-none w-16 h-16 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                                {profile.user.username
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center mt-2 font-semibold">
+                            {profile.user.username}
+                          </div>
+                          <div className="flex gap-3 justify-center">
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.followers.length}
+                              </span>{" "}
+                              Takipçi
                             </div>
-                          )}
-                        </div>
-                        <div className="text-center mt-2 font-semibold">
-                          {profile.user.username}
-                        </div>
-                        <div className="flex gap-6 justify-center">
-                          <div>
-                            <span className="text-green-400 font-semibold">
-                              {profile.followers.length}
-                            </span>{" "}
-                            Takipçi
-                          </div>
-                          <div>
-                            <span className="text-green-400 font-semibold">
-                              {profile.following.length}
-                            </span>{" "}
-                            Takip Edilen
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.following.length}
+                              </span>{" "}
+                              Takip Edilen
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </Link>
-                  </SwiperSlide>
-                );
-              })}
-            </Swiper>
+                      </Link>
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            </div>
+            <div className="lg:hidden md:block hidden">
+              <Swiper
+                spaceBetween={0}
+                modules={[Navigation]}
+                slidesPerView={2}
+                navigation={true}
+              >
+                {followings.map((profile: ProfileI) => {
+                  return (
+                    <SwiperSlide key={profile.id}>
+                      <Link
+                        to={`/profile/${profile.user.id}`}
+                        className="bg-stone-200 block border mx-3 rounded-md shadow-md hover:shadow-lg duration-200 border-stone-300 p-3"
+                      >
+                        <div>
+                          <div className="grid place-content-center">
+                            {profile.profilePhotoUrl ? (
+                              <img
+                                src={profile.profilePhotoUrl}
+                                className="rounded-full select-none w-16 h-16 "
+                              />
+                            ) : (
+                              <div className="rounded-full select-none w-16 h-16 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                                {profile.user.username
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center mt-2 font-semibold">
+                            {profile.user.username}
+                          </div>
+                          <div className="flex gap-3 justify-center">
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.followers.length}
+                              </span>{" "}
+                              Takipçi
+                            </div>
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.following.length}
+                              </span>{" "}
+                              Takip Edilen
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            </div>
+            <div className="md:hidden block">
+              <Swiper
+                spaceBetween={0}
+                modules={[Navigation]}
+                slidesPerView={1}
+                navigation={true}
+              >
+                {followings.map((profile: ProfileI) => {
+                  return (
+                    <SwiperSlide key={profile.id}>
+                      <Link
+                        to={`/profile/${profile.user.id}`}
+                        className="bg-stone-200 block border mx-3 rounded-md shadow-md hover:shadow-lg duration-200 border-stone-300 p-3"
+                      >
+                        <div>
+                          <div className="grid place-content-center">
+                            {profile.profilePhotoUrl ? (
+                              <img
+                                src={profile.profilePhotoUrl}
+                                className="rounded-full select-none w-16 h-16 "
+                              />
+                            ) : (
+                              <div className="rounded-full select-none w-16 h-16 border font-semibold text-sm bg-slate-300 border-[#C5C5C5] grid place-content-center">
+                                {profile.user.username
+                                  .slice(0, 2)
+                                  .toUpperCase()}
+                              </div>
+                            )}
+                          </div>
+                          <div className="text-center mt-2 font-semibold">
+                            {profile.user.username}
+                          </div>
+                          <div className="flex gap-3 justify-center">
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.followers.length}
+                              </span>{" "}
+                              Takipçi
+                            </div>
+                            <div>
+                              <span className="text-green-400 font-semibold">
+                                {profile.following.length}
+                              </span>{" "}
+                              Takip Edilen
+                            </div>
+                          </div>
+                        </div>
+                      </Link>
+                    </SwiperSlide>
+                  );
+                })}
+              </Swiper>
+            </div>
           </div>
         ) : null}
       </div>

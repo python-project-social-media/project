@@ -4,6 +4,7 @@ import { MdInsertPhoto } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "react-toastify";
 import AuthContext from "../../context/context";
+import { Helmet } from "react-helmet";
 
 function UpdatePost() {
   const { GetPost, post }: any = useContext(AuthContext);
@@ -50,6 +51,9 @@ function UpdatePost() {
 
   return (
     <div className="lg:px-10 px-4 without-header">
+      <Helmet>
+        <title>Gönderiyi Güncelle • SportCom</title>
+      </Helmet>
       <div className="grid place-items-center mt-10">
         <textarea
           onChange={(e) => {
