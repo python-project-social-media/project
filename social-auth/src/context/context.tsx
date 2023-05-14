@@ -306,7 +306,7 @@ export const AuthProvider = ({ children }: any) => {
   };
 
   const GetPost = async (pid: number) => {
-    console.log(localStorage.getItem("key"));
+    setPost(undefined);
 
     if (localStorage.getItem("key") != null) {
       await fetch(`http://127.0.0.1:8000/api/post/${pid}`, {

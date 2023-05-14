@@ -17,6 +17,7 @@ function HomeLoggedIn() {
   const [followings, setFollowings] = useState<ProfileI[] | undefined | null>();
   const [news, setNews] = useState<NewsI[] | undefined | null>();
   const [posts, setPosts] = useState<PostI[]>();
+  console.log(posts);
 
   useEffect(() => {
     if (profile) {
@@ -104,10 +105,9 @@ function HomeLoggedIn() {
               <Post post={undefined} />
               <Post post={undefined} />
             </div>
-          ) : (
-            <h3 className="font-semibold text-xl">Gönderi yok. 😢</h3>
-          )}
+          ) : null}
         </div>
+
         <div className="flex-1">
           {news != undefined && news != null ? (
             <div>

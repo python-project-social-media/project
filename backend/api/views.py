@@ -91,7 +91,7 @@ class App:
 
     #!Get all posts
     def get_all_posts_helper(self, tx, profile_id):
-        if profile_id!=0:
+        if profile_id != 0:
             query = (
                 "MATCH (profile:Profile {profile_id:$profile_id}) "
                 "MATCH( (profile) - [:Following] -> (followed: Profile) ) "
@@ -154,20 +154,21 @@ class App:
 
             return arr
 
-    
     #!Search post
-    def search_post_helper(self, tx, text,profile_id):
-        if profile_id!=0:
+    def search_post_helper(self, tx, text, profile_id):
+        if profile_id != 0:
             query = (
-                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' MATCH (profile:Profile {profile_id:$profile_id}) RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
+                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '" + text.strip().lower() +
+                "' MATCH (profile:Profile {profile_id:$profile_id}) RETURN post, ID(post), EXISTS( (profile) -[:Liked]-> (post) )"
             )
         else:
-            
+
             query = (
-                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '"+ text.strip().lower() +"' RETURN post,ID(post), False"
+                "MATCH (post:Post) WHERE toLower(post.text) CONTAINS '" +
+                text.strip().lower() + "' RETURN post,ID(post), False"
             )
-        
-        result = tx.run(query, text=text,profile_id=profile_id)
+
+        result = tx.run(query, text=text, profile_id=profile_id)
 
         try:
             return ([row.data()
@@ -177,24 +178,26 @@ class App:
                 query=query, exception=exception))
             raise
 
-    def search_post(self, text,profile_id):
+    def search_post(self, text, profile_id):
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
-                self.search_post_helper, text,profile_id)
-            arr=[]
-            if len(result)>0:
+                self.search_post_helper, text, profile_id)
+            arr = []
+            if len(result) > 0:
                 for i in result:
                     data = self.serialize_post(i)
                     print(i)
                     data['liked'] = i.get(
-                'EXISTS( (profile) -[:Liked]-> (post) )')
+                        'EXISTS( (profile) -[:Liked]-> (post) )')
                     arr.append(data)
             return arr
 
     #!Search news
     def search_news_helper(self, tx, text):
         query = (
-            "MATCH (news:News) WHERE toLower(news.title) CONTAINS '"+ text.strip().lower() +"' or toLower(news.description) CONTAINS '"+ text.strip().lower() +"' RETURN news,ID(news)"
+            "MATCH (news:News) WHERE toLower(news.title) CONTAINS '" + text.strip().lower() +
+            "' or toLower(news.description) CONTAINS '" +
+            text.strip().lower() + "' RETURN news,ID(news)"
         )
         result = tx.run(query, text=text)
 
@@ -210,14 +213,14 @@ class App:
         with self.driver.session(database="neo4j") as session:
             result = session.execute_write(
                 self.search_news_helper, text)
-            arr=[]
-            if len(result)>0:
+            arr = []
+            if len(result) > 0:
                 for i in result:
                     arr.append(self.serialize_news(i))
             return arr
 
-
     #!Is following
+
     def is_following_profile_helper(self, tx, profile_id, follow_id):
         query = (
             "MATCH (profile:Profile {profile_id:$profile_id}) "
@@ -301,9 +304,9 @@ class App:
     #!Add post
     def add_post_helper(self, tx, file, text, profile_id):
         query = ("MATCH (profile:Profile {profile_id:$profile_id}) "
-            "CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) "
-            "CREATE (profile) -[:Posted]-> (post) RETURN post,ID(post)")
-        
+                 "CREATE (post:Post {text:$text, file:$file, profile_id:$profile_id, comment_count:0, like_count:0, create:TIMESTAMP(), edit:TIMESTAMP()}) "
+                 "CREATE (profile) -[:Posted]-> (post) RETURN post,ID(post)")
+
         result = tx.run(query, text=text, profile_id=profile_id, file=file)
 
         try:
@@ -375,7 +378,7 @@ class App:
 
     #!Get post
     def get_post_helper(self, tx, id, profile_id):
-        if profile_id!=0:
+        if profile_id != 0:
             query = (
                 "MATCH (post:Post) "
                 "WHERE ID(post)=$id "
@@ -754,7 +757,7 @@ class App:
                 "SET news.image=$image "
                 "RETURN news"
             )
-        
+
         result = tx.run(query, id=id, title=title,
                         description=description, image=image, delete=delete)
 
@@ -878,6 +881,27 @@ class App:
             for i in dp_values:
                 state = i
             return state
+
+    #!Add profile
+    def add_profile_helper(self, tx, username, profile_id):
+        query = (
+            "CREATE (profile:Profile {profile_id:$profile_id, username:$username, followers_count:0, following_count:0}) RETURN profile"
+        )
+        result = tx.run(query, username=username, profile_id=profile_id)
+
+        try:
+            return ([row.data()
+                     for row in result])
+        except ServiceUnavailable as exception:
+            logging.error("{query} raised an error: \n {exception}".format(
+                query=query, exception=exception))
+            raise
+
+    def add_profile(self, profile_id, username):
+        with self.driver.session(database="neo4j") as session:
+            result = session.execute_write(
+                self.add_profile_helper, username, profile_id)
+            return result
 
     #!Dont mute a profile
     def dont_mute_profile_helper(self, tx, profile_id, mute_id):
@@ -1018,7 +1042,7 @@ def GetAllPosts(request):
             arr = data1 + data
         else:
             data = app.get_all_posts(0)
-            arr=data
+            arr = data
         res = []
         for i in arr:
             if i not in res:
@@ -1037,11 +1061,13 @@ def GetAllPosts(request):
 @permission_classes([IsAuthenticated])
 def AddPost(request):
     if request.data:
+        print(request.data)
         profile = models.Profile.objects.filter(user=request.user)
         if len(profile) > 0:
             profile = profile[0]
         else:
             return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
+
         upload = request.FILES.get('upload')
         if upload != None:
             fss = FileSystemStorage()
@@ -1081,7 +1107,7 @@ def GetPost(request, id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def DeletePost(request, id):
-    post = app.get_post(id=id,profile_id=0)
+    post = app.get_post(id=id, profile_id=0)
     if post == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
     if request.user.id == post.get('profile').get('user').get('id'):
@@ -1100,9 +1126,10 @@ def DeletePost(request, id):
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def UpdatePost(request, id):
-    post = app.get_post(id=id,profile_id=0)
+    post = app.get_post(id=id, profile_id=0)
     if post == "E":
         return Response({"msg_tr": "Gönderi bulunamadı. 😒", "msg_en": "Post not fonund. 😒"}, status=400)
+
     if request.user.id == post.get('profile').get('user').get('id'):
         if request.data:
             print(request.data)
@@ -1324,7 +1351,7 @@ def GetProfile(request, id):
     """
         Profili getirir, userın idsini alır.
     """
-    user = get_object_or_404(User,id=id)
+    user = get_object_or_404(User, id=id)
     profile = models.Profile.objects.filter(user=user)
     if len(profile) > 0:
         data = serializers.ProfileSerializer(profile[0], many=False)
@@ -1506,31 +1533,34 @@ def UpdateNews(request, id):
     else:
         return Response({"msg_en": "Couldnt find the news. 😶", "msg_tr": "Haber bulunamadı. 😶"}, status=400)
 
-@api_view(['Get'])
+
+@api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
 def SearchPostAndNews(request, text):
     """Haberin güncellenmesini sağlar, delete, title, description verilerini alır."""
-    if len(text)>4:
+    if len(text) > 4:
         filter = models.Filter.objects.filter(text=text.lower())
-        if len(filter)>0:
-            filter=filter[0]
-            filter.count+=1
+        if len(filter) > 0:
+            filter = filter[0]
+            filter.count += 1
             filter.save()
         else:
-            filter = models.Filter(text=text.lower(),count=1)
+            filter = models.Filter(text=text.lower(), count=1)
             filter.save()
 
     if not request.user.is_anonymous:
         print("girişli")
-        result = app.search_post(text,profile_id=models.Profile.objects.get(user=request.user).id)
+        result = app.search_post(
+            text, profile_id=models.Profile.objects.get(user=request.user).id)
         result1 = app.search_news(text)
     else:
-        result = app.search_post(text,profile_id=0)
+        result = app.search_post(text, profile_id=0)
         result1 = app.search_news(text)
-    result = [{"posts":result,"news":result1}]
+    result = [{"posts": result, "news": result1}]
     app.close()
-    return Response(result,status=200)
+    return Response(result, status=200)
+
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
@@ -1539,23 +1569,26 @@ def GetMostSearched(request):
     """En çok aranan filtreyi getirir."""
     week_ago = datetime.datetime.today() - datetime.timedelta(days=7)
 
-    filter = models.Filter.objects.filter(create__gte=week_ago).order_by('-count')[:1]
-    serializer = serializers.FilterSerializer(filter[0],many=False)
-    return Response(serializer.data,status=200)
+    filter = models.Filter.objects.filter(
+        create__gte=week_ago).order_by('-count')[:1]
+    serializer = serializers.FilterSerializer(filter[0], many=False)
+    return Response(serializer.data, status=200)
+
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([AllowAny])
-def GetUsersPosts(request,id):
+def GetUsersPosts(request, id):
     """Bir kullanıcının paylaştığı gönderileri gösterir."""
-    user = get_object_or_404(User,id=id)
+    user = get_object_or_404(User, id=id)
     profile = models.Profile.objects.filter(user=user)
     if len(profile) > 0:
         profile = profile[0]
     else:
         return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
     result = app.get_my_posts(profile.id)
-    return Response(result,status=200)
+    return Response(result, status=200)
+
 
 @api_view(['GET'])
 @authentication_classes([TokenAuthentication])
@@ -1568,18 +1601,12 @@ def GetFollowings(request):
     else:
         return Response({"msg_en": "Couldnt find the profile. 🥲", "msg_tr": "Profil bulunamadı. 🥲"}, status=400)
     arr = profile.following.all()
-    res=[]
+    res = []
     for i in arr:
         res.append(models.Profile.objects.get(user=i.id))
-    serializer = serializers.ProfileSerializer(res,many=True)
+    serializer = serializers.ProfileSerializer(res, many=True)
 
-
-
-    return Response(serializer.data,status=200)
-
-
-
-
+    return Response(serializer.data, status=200)
 
 
 class GoogleLogin(SocialLoginView):

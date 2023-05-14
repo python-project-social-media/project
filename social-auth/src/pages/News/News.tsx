@@ -7,10 +7,22 @@ import AuthContext from "../../context/context";
 import { Helmet } from "react-helmet";
 
 function News() {
-  const { profile, getNews, news }: any = useContext(AuthContext);
+  const { profile }: any = useContext(AuthContext);
+
+  const [news, setNews] = useState();
 
   useEffect(() => {
-    getNews();
+    fetch("http://127.0.0.1:8000/api/news/all", {
+      method: "GET",
+      headers: {
+        "content-type": "application/json",
+      },
+    }).then(async (resp: Response) => {
+      if (resp.status == 200) {
+        let data = await resp.json();
+        setNews(data.data);
+      }
+    });
   }, []);
 
   return (

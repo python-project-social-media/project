@@ -9,7 +9,6 @@ import { Helmet } from "react-helmet";
 
 function PostDetail() {
   const { comments, getComments, post, GetPost }: any = useContext(AuthContext);
-  console.log(post);
 
   const [text, setText] = useState<string>("");
   const params = useParams();

@@ -48,7 +48,11 @@ function Sidebar() {
         >
           Gönderiler
         </Link>
-        <Link to={"/news"} className="w-fit" onClick={toggleSidebar}>
+        <Link
+          className={pathname == "/news" ? "active w-fit" : "w-fit"}
+          to={"/news"}
+          onClick={toggleSidebar}
+        >
           Haberler
         </Link>
         <Link

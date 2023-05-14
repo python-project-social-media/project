@@ -21,7 +21,7 @@ urlpatterns = [
     path('profile/<int:id>', views.GetProfile),
     path('profile/<int:id>/google', views.GoogleAddOrGetProfile),
     path('profile/add', views.AddProfile),
-    path('profile/update', views.UpdateProfile),
+    # path('profile/update', views.UpdateProfile),
     path('profile/<int:follow_id>/follow', views.ToogleProfileFollow),
     path('profile/<int:id>/posts', views.GetUsersPosts),
     path('profile/followings', views.GetFollowings),
